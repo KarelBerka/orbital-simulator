@@ -56,6 +56,7 @@ const toggleAxes = document.getElementById('toggle-axes');
 const toggleAutorotate = document.getElementById('toggle-autorotate');
 const toggleBoundary = document.getElementById('toggle-boundary');
 const toggleNormalizeColor = document.getElementById('toggle-normalize-color');
+const sliderBoundaryIso = document.getElementById('slider-boundary-iso');
 
 // Spuštění aplikace po načtení DOMu
 window.addEventListener('DOMContentLoaded', () => {
@@ -106,6 +107,11 @@ function setupThreeControls() {
         recolorPoints();
     });
     
+    sliderBoundaryIso.addEventListener('input', () => {
+        const boundaryPts = generateBoundaryPoints(currentN, currentL, currentM, Rmax, Pmax);
+        visualizer.updateBoundaryShell(boundaryPts);
+    });
+    
     btnThemeToggle.addEventListener('click', () => {
         const isLight = document.body.classList.toggle('light-mode');
         if (isLight) {
@@ -115,6 +121,9 @@ function setupThreeControls() {
             btnThemeToggle.textContent = '☀️ Světlý režim';
             visualizer.setTheme('dark');
         }
+        recolorPoints();
+        const boundaryPts = generateBoundaryPoints(currentN, currentL, currentM, Rmax, Pmax);
+        visualizer.updateBoundaryShell(boundaryPts);
         updateSliceCanvas();
     });
 }
@@ -489,7 +498,8 @@ function generateBoundaryPoints(n, l, m, Rmax, Pmax) {
     const points = [];
     const N = 40; // Jemnost mřížky 40x40x40 (cca 64 000 bodů)
     
-    const threshold = 0.028 * Pmax;
+    const isoVal = parseFloat(sliderBoundaryIso.value);
+    const threshold = isoVal * Pmax;
     
     const grid = new Float32Array(N * N * N);
     const phases = new Float32Array(N * N * N);

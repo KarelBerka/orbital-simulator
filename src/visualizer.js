@@ -12,6 +12,10 @@ export class OrbitalVisualizer {
         this.pointCount = 0;
         this.pointSize = 3.0;
         
+        // Výchozí téma a schéma
+        this.currentTheme = 'dark';
+        this.currentScheme = 'orange-cyan';
+        
         // Výchozí barvy fází
         this.colorPos = new THREE.Color('#ff5722'); // Oranžovo-červená pro kladnou fázi
         this.colorNeg = new THREE.Color('#00bcd4'); // Tyrkysová pro zápornou fázi
@@ -163,6 +167,8 @@ export class OrbitalVisualizer {
         // Upozornění Three.js o změně atributů
         this.geometry.attributes.position.needsUpdate = true;
         this.geometry.attributes.color.needsUpdate = true;
+        this.geometry.computeBoundingSphere();
+        this.geometry.computeBoundingBox();
         this.geometry.setDrawRange(0, this.pointCount);
     }
 
@@ -227,6 +233,8 @@ export class OrbitalVisualizer {
         
         this.boundaryGeometry.attributes.position.needsUpdate = true;
         this.boundaryGeometry.attributes.color.needsUpdate = true;
+        this.boundaryGeometry.computeBoundingSphere();
+        this.boundaryGeometry.computeBoundingBox();
         this.boundaryGeometry.setDrawRange(0, count);
     }
 
@@ -234,17 +242,43 @@ export class OrbitalVisualizer {
      * Nastaví barevné téma 3D scény (světlý / tmavý režim).
      */
     setTheme(theme) {
+        this.currentTheme = theme;
+        this.updateColors();
+        
         if (theme === 'light') {
             this.scene.background.set('#f8fafc');
             
+            // Ve světlém režimu změníme prolínání (blending) na standardní,
+            // jinak jsou neonové barvy na bílém pozadí neviditelné.
+            this.material.blending = THREE.NormalBlending;
+            this.material.opacity = 0.82;
+            this.material.needsUpdate = true;
+            
+            if (this.boundaryMaterial) {
+                this.boundaryMaterial.blending = THREE.NormalBlending;
+                this.boundaryMaterial.opacity = 0.38;
+                this.boundaryMaterial.needsUpdate = true;
+            }
+            
             const gridVisible = this.gridHelper.visible;
             this.scene.remove(this.gridHelper);
-            this.gridHelper = new THREE.GridHelper(60, 30, '#cbd5e1', '#e2e8f0');
+            this.gridHelper = new THREE.GridHelper(60, 30, '#cbd5e1', '#cbd5e1'); // Ztmavení mřížky
             this.gridHelper.visible = gridVisible;
             this.gridHelper.position.y = -0.01;
             this.scene.add(this.gridHelper);
         } else {
             this.scene.background.set('#0b0e14');
+            
+            // Vrátíme aditivní záření pro tmavý režim
+            this.material.blending = THREE.AdditiveBlending;
+            this.material.opacity = 0.85;
+            this.material.needsUpdate = true;
+            
+            if (this.boundaryMaterial) {
+                this.boundaryMaterial.blending = THREE.AdditiveBlending;
+                this.boundaryMaterial.opacity = 0.28;
+                this.boundaryMaterial.needsUpdate = true;
+            }
             
             const gridVisible = this.gridHelper.visible;
             this.scene.remove(this.gridHelper);
@@ -259,30 +293,30 @@ export class OrbitalVisualizer {
      * Nastaví barevné schéma bodů.
      */
     setColorScheme(scheme) {
-        if (scheme === 'orange-cyan') {
-            this.colorPos.set('#ff5722');
-            this.colorNeg.set('#00bcd4');
-        } else if (scheme === 'pink-green') {
-            this.colorPos.set('#e91e63');
-            this.colorNeg.set('#4caf50');
-        } else if (scheme === 'purple-yellow') {
-            this.colorPos.set('#9c27b0');
-            this.colorNeg.set('#ffeb3b');
-        } else if (scheme === 'classic') {
-            this.colorPos.set('#f44336'); // Červená
-            this.colorNeg.set('#2196f3'); // Modrá
-        }
-        
-        // Pokud již máme body, musíme přebarvit celé stávající pole
-        this.recolorAllPoints();
+        this.currentScheme = scheme;
+        this.updateColors();
     }
 
-    recolorAllPoints() {
-        // Zde bychom museli uchovávat fáze pro každý bod, pokud bychom je chtěli dynamicky přebarvit.
-        // Pro zjednodušení: tato operace přebarví body, které budeme nově přidávat.
-        // Chceme-li přebarvit i stávající body, můžeme v main.js při změně schématu body smazat nebo si
-        // uchovat historii bodů a přebudovat je. Raději to vyřešíme tak, že nově generované body budou mít nové barvy,
-        // nebo vymažeme scénu (což je přirozené při změně nastavení).
+    /**
+     * Dynamicky přizpůsobí barvy a jejich jas (kontrast) podle aktivního tématu a schématu.
+     */
+    updateColors() {
+        const theme = this.currentTheme;
+        const scheme = this.currentScheme;
+        
+        if (scheme === 'orange-cyan') {
+            this.colorPos.set(theme === 'light' ? '#d84315' : '#ff5722'); // Tmavší oranžová vs neonová
+            this.colorNeg.set(theme === 'light' ? '#00838f' : '#00bcd4'); // Tmavší tyrkysová vs neonová
+        } else if (scheme === 'pink-green') {
+            this.colorPos.set(theme === 'light' ? '#c2185b' : '#e91e63');
+            this.colorNeg.set(theme === 'light' ? '#2e7d32' : '#4caf50');
+        } else if (scheme === 'purple-yellow') {
+            this.colorPos.set(theme === 'light' ? '#7b1fa2' : '#9c27b0');
+            this.colorNeg.set(theme === 'light' ? '#ef6c00' : '#ffeb3b'); // Pro světlé pozadí dáme tmavší žlutou/oranžovou
+        } else if (scheme === 'classic') {
+            this.colorPos.set(theme === 'light' ? '#c62828' : '#f44336');
+            this.colorNeg.set(theme === 'light' ? '#1565c0' : '#2196f3');
+        }
     }
 
     onWindowResize() {
