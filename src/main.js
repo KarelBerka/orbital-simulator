@@ -54,6 +54,8 @@ const selectColors = document.getElementById('select-colors');
 const toggleGrid = document.getElementById('toggle-grid');
 const toggleAxes = document.getElementById('toggle-axes');
 const toggleAutorotate = document.getElementById('toggle-autorotate');
+const toggleBoundary = document.getElementById('toggle-boundary');
+const toggleNormalizeColor = document.getElementById('toggle-normalize-color');
 
 // Spuštění aplikace po načtení DOMu
 window.addEventListener('DOMContentLoaded', () => {
@@ -80,7 +82,7 @@ function setupThreeControls() {
     
     selectColors.addEventListener('change', (e) => {
         visualizer.setColorScheme(e.target.value);
-        // Vymažeme a znovu vykreslíme řez s novými barvami
+        recolorPoints();
         updateSliceCanvas();
     });
     
@@ -94,6 +96,14 @@ function setupThreeControls() {
     
     toggleAutorotate.addEventListener('change', (e) => {
         visualizer.autoRotate = e.target.checked;
+    });
+    
+    toggleBoundary.addEventListener('change', (e) => {
+        visualizer.toggleBoundaryShell(e.target.checked);
+    });
+    
+    toggleNormalizeColor.addEventListener('change', () => {
+        recolorPoints();
     });
     
     btnThemeToggle.addEventListener('click', () => {
@@ -233,6 +243,11 @@ function updateOrbitalState(n, l, m) {
     Rmax = params.Rmax;
     Pmax = params.Pmax;
     
+    // Generování a vykreslení teoretického tvaru orbitalu (hranice/obal)
+    const boundaryPts = generateBoundaryPoints(n, l, m, Rmax, Pmax);
+    visualizer.updateBoundaryShell(boundaryPts);
+    visualizer.toggleBoundaryShell(toggleBoundary.checked);
+    
     // Smazání stávajících bodů (požadavek uživatele)
     visualizer.clearPoints();
     updatePointCountUI();
@@ -260,10 +275,18 @@ function updateOrbitalState(n, l, m) {
  * Vygeneruje a přidá elektronové polohy
  */
 function addElectrons(count) {
+    const normalizeColor = toggleNormalizeColor.checked;
     // Generování bodů pomocí Rejection Samplingu
     for (let i = 0; i < count; i++) {
         const pt = sampleElectronPosition(currentN, currentL, currentM, Rmax, Pmax);
-        visualizer.addPoint(pt.x, pt.y, pt.z, pt.phase);
+        
+        let scale = 1.0;
+        if (normalizeColor) {
+            const P = pt.phase * pt.phase;
+            scale = Math.pow(Math.min(1.0, P / Pmax), 0.32);
+        }
+        
+        visualizer.addPoint(pt.x, pt.y, pt.z, pt.phase, scale);
     }
     updatePointCountUI();
 }
@@ -457,4 +480,96 @@ function getLatexFormula(n, l, m) {
     }
 
     return `$$\\psi_{${n}, \\text{${label}}} = R_{${n},${l}}(r) \\cdot Y_{${l},m}(\\theta,\\phi) = \\left( ${radialLatex} \\right) \\cdot \\left( ${angularLatex} \\right)$$`;
+}
+
+/**
+ * Vygeneruje mrak bodů na rozhraní (izoploše) teoretického tvaru orbitalu.
+ */
+function generateBoundaryPoints(n, l, m, Rmax, Pmax) {
+    const points = [];
+    const N = 40; // Jemnost mřížky 40x40x40 (cca 64 000 bodů)
+    
+    const threshold = 0.028 * Pmax;
+    
+    const grid = new Float32Array(N * N * N);
+    const phases = new Float32Array(N * N * N);
+    
+    // Spočítáme hodnoty na mřížce
+    for (let z = 0; z < N; z++) {
+        const fz = ((z / (N - 1)) * 2 - 1) * Rmax;
+        for (let y = 0; y < N; y++) {
+            const fy = ((y / (N - 1)) * 2 - 1) * Rmax;
+            for (let x = 0; x < N; x++) {
+                const fx = ((x / (N - 1)) * 2 - 1) * Rmax;
+                
+                const psi = waveFunction(n, l, m, fx, fy, fz);
+                const idx = x + y * N + z * N * N;
+                grid[idx] = psi * psi;
+                phases[idx] = psi;
+            }
+        }
+    }
+    
+    // Detekce přechodu přes práh (boundary voxels)
+    for (let z = 1; z < N - 1; z++) {
+        const fz = ((z / (N - 1)) * 2 - 1) * Rmax;
+        for (let y = 1; y < N - 1; y++) {
+            const fy = ((y / (N - 1)) * 2 - 1) * Rmax;
+            for (let x = 1; x < N - 1; x++) {
+                const idx = x + y * N + z * N * N;
+                const val = grid[idx];
+                
+                if (val >= threshold) {
+                    const n1 = grid[(x + 1) + y * N + z * N * N];
+                    const n2 = grid[(x - 1) + y * N + z * N * N];
+                    const n3 = grid[x + (y + 1) * N + z * N * N];
+                    const n4 = grid[x + (y - 1) * N + z * N * N];
+                    const n5 = grid[x + y * N + (z + 1) * N * N];
+                    const n6 = grid[x + y * N + (z - 1) * N * N];
+                    
+                    if (n1 < threshold || n2 < threshold || n3 < threshold || n4 < threshold || n5 < threshold || n6 < threshold) {
+                        const fx = ((x / (N - 1)) * 2 - 1) * Rmax;
+                        points.push({ x: fx, y: fy, z: fz, phase: phases[idx] });
+                    }
+                }
+            }
+        }
+    }
+    
+    return points;
+}
+
+/**
+ * Dynamicky přebarví a upraví jas všech existujících nasimulovaných bodů elektronu.
+ */
+function recolorPoints() {
+    const normalizeColor = toggleNormalizeColor.checked;
+    const count = visualizer.pointCount;
+    const positions = visualizer.positions;
+    const colors = visualizer.colors;
+    
+    const colorPos = visualizer.colorPos;
+    const colorNeg = visualizer.colorNeg;
+    
+    for (let i = 0; i < count; i++) {
+        const idx = i * 3;
+        const x = positions[idx];
+        const y = positions[idx + 1];
+        const z = positions[idx + 2];
+        
+        const psi = waveFunction(currentN, currentL, currentM, x, y, z);
+        const color = psi >= 0 ? colorPos : colorNeg;
+        
+        let scale = 1.0;
+        if (normalizeColor) {
+            const P = psi * psi;
+            scale = Math.pow(Math.min(1.0, P / Pmax), 0.32);
+        }
+        
+        colors[idx] = color.r * scale;
+        colors[idx + 1] = color.g * scale;
+        colors[idx + 2] = color.b * scale;
+    }
+    
+    visualizer.geometry.attributes.color.needsUpdate = true;
 }

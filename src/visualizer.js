@@ -84,7 +84,7 @@ export class OrbitalVisualizer {
         
         this.geometry.setDrawRange(0, 0);
 
-        // Materiál bodů s kruhovou texturou a zářením (glow)
+        // Společný materiál bodů s kruhovou texturou a zářením (glow)
         const canvas = document.createElement('canvas');
         canvas.width = 16;
         canvas.height = 16;
@@ -110,12 +110,35 @@ export class OrbitalVisualizer {
 
         this.pointCloud = new THREE.Points(this.geometry, this.material);
         this.scene.add(this.pointCloud);
+
+        // Inicializace bodů pro teoretický obal orbitalu (final shape boundary shell)
+        this.boundaryGeometry = new THREE.BufferGeometry();
+        this.maxBoundaryPoints = 60000;
+        this.boundaryPositions = new Float32Array(this.maxBoundaryPoints * 3);
+        this.boundaryColors = new Float32Array(this.maxBoundaryPoints * 3);
+        
+        this.boundaryGeometry.setAttribute('position', new THREE.BufferAttribute(this.boundaryPositions, 3));
+        this.boundaryGeometry.setAttribute('color', new THREE.BufferAttribute(this.boundaryColors, 3));
+        this.boundaryGeometry.setDrawRange(0, 0);
+        
+        this.boundaryMaterial = new THREE.PointsMaterial({
+            size: this.pointSize * 0.75,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.28,
+            map: texture,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        
+        this.boundaryPointCloud = new THREE.Points(this.boundaryGeometry, this.boundaryMaterial);
+        this.scene.add(this.boundaryPointCloud);
     }
 
     /**
      * Přidá jeden bod s danou fází (kladná/záporná) do vizualizace.
      */
-    addPoint(x, y, z, phase) {
+    addPoint(x, y, z, phase, scale = 1.0) {
         if (this.pointCount >= this.maxPoints) {
             // Pokud přeteče limit, vymažeme nejstarší body (kruhová fronta) nebo ignorujeme
             // Pro jednoduchost budeme ignorovat
@@ -129,11 +152,11 @@ export class OrbitalVisualizer {
         this.positions[idx + 1] = y;
         this.positions[idx + 2] = z;
 
-        // Výběr barvy podle fáze
+        // Výběr barvy podle fáze s aplikací jasu
         const color = phase >= 0 ? this.colorPos : this.colorNeg;
-        this.colors[idx] = color.r;
-        this.colors[idx + 1] = color.g;
-        this.colors[idx + 2] = color.b;
+        this.colors[idx] = color.r * scale;
+        this.colors[idx + 1] = color.g * scale;
+        this.colors[idx + 2] = color.b * scale;
 
         this.pointCount++;
 
@@ -157,6 +180,9 @@ export class OrbitalVisualizer {
     setPointSize(size) {
         this.pointSize = size;
         this.material.size = size;
+        if (this.boundaryMaterial) {
+            this.boundaryMaterial.size = size * 0.75;
+        }
     }
 
     /**
@@ -171,6 +197,37 @@ export class OrbitalVisualizer {
      */
     toggleAxes(visible) {
         this.axesHelper.visible = visible;
+    }
+
+    /**
+     * Přepne viditelnost teoretického obalu orbitalu.
+     */
+    toggleBoundaryShell(visible) {
+        this.boundaryPointCloud.visible = visible;
+    }
+
+    /**
+     * Vykreslí body tvořící vnější obal orbitalu (izoplochu).
+     */
+    updateBoundaryShell(pointsData) {
+        const count = Math.min(pointsData.length, this.maxBoundaryPoints);
+        
+        for (let i = 0; i < count; i++) {
+            const pt = pointsData[i];
+            const idx = i * 3;
+            this.boundaryPositions[idx] = pt.x;
+            this.boundaryPositions[idx + 1] = pt.y;
+            this.boundaryPositions[idx + 2] = pt.z;
+            
+            const color = pt.phase >= 0 ? this.colorPos : this.colorNeg;
+            this.boundaryColors[idx] = color.r;
+            this.boundaryColors[idx + 1] = color.g;
+            this.boundaryColors[idx + 2] = color.b;
+        }
+        
+        this.boundaryGeometry.attributes.position.needsUpdate = true;
+        this.boundaryGeometry.attributes.color.needsUpdate = true;
+        this.boundaryGeometry.setDrawRange(0, count);
     }
 
     /**
@@ -241,11 +298,17 @@ export class OrbitalVisualizer {
     animate() {
         requestAnimationFrame(() => this.animate());
 
-        // Automatické otáčení scény
+        // Automatické otáčení scény (synchronizované pro oba mraky bodů)
         if (this.autoRotate) {
             this.pointCloud.rotation.y += 0.002;
+            if (this.boundaryPointCloud) {
+                this.boundaryPointCloud.rotation.y = this.pointCloud.rotation.y;
+            }
         } else {
             this.pointCloud.rotation.y = 0;
+            if (this.boundaryPointCloud) {
+                this.boundaryPointCloud.rotation.y = 0;
+            }
         }
 
         this.controls.update();
