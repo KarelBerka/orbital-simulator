@@ -127,7 +127,7 @@
             </div>
 
             <!-- Stav simulace a 2D řez -->
-            <div class="sidebar-section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
+            <div class="sidebar-section responsive-row-grid">
                 <div>
                     <h2>Stav a fáze</h2>
                     <div class="stats-grid" style="grid-template-columns: 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
@@ -182,48 +182,58 @@
                 </div>
             </div>
 
-        </section>
-
-        <!-- 3D Vizualizační prostor -->
-        <section id="canvas-container">
-            
-            <!-- Překryvné ovládací prvky scény -->
-            <div class="canvas-overlay">
-                <div class="overlay-item">
+            <!-- Nastavení zobrazení a vzhledu -->
+            <div class="sidebar-section">
+                <h2>Zobrazení a vzhled</h2>
+                
+                <div class="control-group">
                     <label for="slider-point-size">Velikost bodů</label>
-                    <input type="range" id="slider-point-size" class="range-slider" min="1" max="10" step="0.5" value="3.5" style="width: 100px;">
+                    <input type="range" id="slider-point-size" class="range-slider" min="1" max="10" step="0.5" value="3.5">
                 </div>
-                <div class="overlay-item">
-                    <label for="select-colors">Schéma</label>
-                    <select id="select-colors" class="select-small">
+                
+                <div class="control-group">
+                    <label for="select-colors">Barevné schéma fází</label>
+                    <select id="select-colors" class="select-small" style="width: 100%; padding: 0.5rem; height: auto;">
                         <option value="orange-cyan" selected>Oranžová / Tyrkysová</option>
                         <option value="classic">Červená / Modrá</option>
                         <option value="pink-green">Růžová / Zelená</option>
                         <option value="purple-yellow">Fialová / Žlutá</option>
                     </select>
                 </div>
-                <div class="overlay-item">
-                    <span>Mřížka počátku</span>
-                    <label class="switch" style="transform: scale(0.8);">
-                        <input type="checkbox" id="toggle-grid" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="overlay-item">
-                    <span>Zobrazit osy XYZ</span>
-                    <label class="switch" style="transform: scale(0.8);">
-                        <input type="checkbox" id="toggle-axes" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="overlay-item">
-                    <span>Auto-rotace scény</span>
-                    <label class="switch" style="transform: scale(0.8);">
-                        <input type="checkbox" id="toggle-autorotate" checked>
-                        <span class="slider"></span>
-                    </label>
+                
+                <div class="auto-generate-box" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div class="toggle-row">
+                        <span style="font-size: 0.9rem; font-weight: 500;">Mřížka počátku</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-grid" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="toggle-row">
+                        <span style="font-size: 0.9rem; font-weight: 500;">Zobrazit osy XYZ</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-axes" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="toggle-row">
+                        <span style="font-size: 0.9rem; font-weight: 500;">Auto-rotace scény</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-autorotate" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
+
+        </section>
+
+        <!-- 3D Vizualizační prostor -->
+        <section id="canvas-container">
+            
+            <!-- Zobrazení 3D scény bez překryvných ovládacích prvků -->
 
             <!-- Interaktivní návod na spodní hraně plátna -->
             <div class="help-overlay">

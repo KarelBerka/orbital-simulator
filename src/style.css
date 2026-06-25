@@ -647,6 +647,14 @@ input:checked + .slider:before {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
+/* Výchozí styl pro responsivní řádek (2 sloupce na desktopu) */
+.responsive-row-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+
 /* Responsivita */
 @media (max-width: 900px) {
     main {
@@ -663,10 +671,63 @@ input:checked + .slider:before {
     
     #canvas-container {
         height: 50vh;
-        min-height: 300px;
+        min-height: 350px;
     }
     
     .help-overlay {
         display: none;
     }
+    
+    .preset-grid {
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    }
 }
+
+@media (max-width: 600px) {
+    header {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        gap: 0.75rem;
+        text-align: center;
+    }
+    
+    header h1 {
+        font-size: 1.25rem;
+        justify-content: center;
+    }
+    
+    .subtitle {
+        font-size: 0.75rem;
+    }
+    
+    #btn-theme-toggle {
+        width: 100%;
+    }
+    
+    .responsive-row-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .slice-container {
+        width: 100%;
+        align-items: center;
+    }
+    
+    .stats-grid {
+        width: 100%;
+    }
+    
+    .quantum-grid {
+        gap: 0.5rem;
+    }
+    
+    .quantum-select-wrapper {
+        padding: 0.4rem;
+    }
+    
+    .quantum-value-select {
+        font-size: 1rem;
+    }
+}
+
