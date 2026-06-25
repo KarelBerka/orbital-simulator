@@ -174,6 +174,31 @@ export class OrbitalVisualizer {
     }
 
     /**
+     * Nastaví barevné téma 3D scény (světlý / tmavý režim).
+     */
+    setTheme(theme) {
+        if (theme === 'light') {
+            this.scene.background.set('#f8fafc');
+            
+            const gridVisible = this.gridHelper.visible;
+            this.scene.remove(this.gridHelper);
+            this.gridHelper = new THREE.GridHelper(60, 30, '#cbd5e1', '#e2e8f0');
+            this.gridHelper.visible = gridVisible;
+            this.gridHelper.position.y = -0.01;
+            this.scene.add(this.gridHelper);
+        } else {
+            this.scene.background.set('#0b0e14');
+            
+            const gridVisible = this.gridHelper.visible;
+            this.scene.remove(this.gridHelper);
+            this.gridHelper = new THREE.GridHelper(60, 30, '#1e293b', '#0f172a');
+            this.gridHelper.visible = gridVisible;
+            this.gridHelper.position.y = -0.01;
+            this.scene.add(this.gridHelper);
+        }
+    }
+
+    /**
      * Nastaví barevné schéma bodů.
      */
     setColorScheme(scheme) {

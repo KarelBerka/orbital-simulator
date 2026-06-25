@@ -41,6 +41,7 @@ const statCount = document.getElementById('stat-count');
 const sliceCanvas = document.getElementById('slice-canvas');
 const selectSlicePlane = document.getElementById('select-slice-plane');
 const equationBox = document.getElementById('equation-box');
+const btnThemeToggle = document.getElementById('btn-theme-toggle');
 
 // Uzlové statistiky
 const valRadialNodes = document.getElementById('val-radial-nodes');
@@ -93,6 +94,18 @@ function setupThreeControls() {
     
     toggleAutorotate.addEventListener('change', (e) => {
         visualizer.autoRotate = e.target.checked;
+    });
+    
+    btnThemeToggle.addEventListener('click', () => {
+        const isLight = document.body.classList.toggle('light-mode');
+        if (isLight) {
+            btnThemeToggle.textContent = '🌙 Tmavý režim';
+            visualizer.setTheme('light');
+        } else {
+            btnThemeToggle.textContent = '☀️ Světlý režim';
+            visualizer.setTheme('dark');
+        }
+        updateSliceCanvas();
     });
 }
 
@@ -297,16 +310,15 @@ function updateSliceCanvas() {
     const ctx = sliceCanvas.getContext('2d');
     const imgData = ctx.createImageData(width, height);
     
-    // Vybereme barvy fází podle nastaveného barevného schématu ve visualizeru
     const colorPos = visualizer.colorPos;
     const colorNeg = visualizer.colorNeg;
+    const isLightMode = document.body.classList.contains('light-mode');
     
     // Vzorkování 2D plochy
     for (let py = 0; py < height; py++) {
         for (let px = 0; px < width; px++) {
-            // Převod na fyzické souřadnice v rozmezí [-Rmax, Rmax]
             const fx = ((px / width) * 2 - 1) * Rmax;
-            const fy = ((1 - py / height) * 2 - 1) * Rmax; // Otočení Y osy pro plátno
+            const fy = ((1 - py / height) * 2 - 1) * Rmax;
             
             let x = 0, y = 0, z = 0;
             if (slicePlane === 'xy') {
@@ -320,20 +332,20 @@ function updateSliceCanvas() {
             const psi = waveFunction(currentN, currentL, currentM, x, y, z);
             const P = psi * psi;
             
-            // Nelineární (gama) škálování pro zviditelnění slabších vnějších laloků
             const normP = Math.min(1.0, P / Pmax);
-            const intensity = Math.round(Math.pow(normP, 0.55) * 255); 
+            const intensity = Math.pow(normP, 0.55);
             
             const idx = (py * width + px) * 4;
+            const color = psi >= 0 ? colorPos : colorNeg;
             
-            if (psi >= 0) {
-                imgData.data[idx] = Math.round(intensity * colorPos.r);
-                imgData.data[idx + 1] = Math.round(intensity * colorPos.g);
-                imgData.data[idx + 2] = Math.round(intensity * colorPos.b);
+            if (isLightMode) {
+                imgData.data[idx] = Math.round(255 - intensity * (255 - color.r * 255));
+                imgData.data[idx + 1] = Math.round(255 - intensity * (255 - color.g * 255));
+                imgData.data[idx + 2] = Math.round(255 - intensity * (255 - color.b * 255));
             } else {
-                imgData.data[idx] = Math.round(intensity * colorNeg.r);
-                imgData.data[idx + 1] = Math.round(intensity * colorNeg.g);
-                imgData.data[idx + 2] = Math.round(intensity * colorNeg.b);
+                imgData.data[idx] = Math.round(intensity * color.r * 255);
+                imgData.data[idx + 1] = Math.round(intensity * color.g * 255);
+                imgData.data[idx + 2] = Math.round(intensity * color.b * 255);
             }
             imgData.data[idx + 3] = 255;
         }
@@ -342,7 +354,7 @@ function updateSliceCanvas() {
     ctx.putImageData(imgData, 0, 0);
     
     // Nakreslení tenkých dělících os
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.strokeStyle = isLightMode ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.15)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, height / 2);
