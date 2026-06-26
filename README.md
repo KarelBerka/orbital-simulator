@@ -1,6 +1,6 @@
 # 3D Atomic Orbital Simulator
 
-An interactive 3D simulation of electron probability density in hydrogen-like atomic orbitals ($s, p, d, f$) using Monte Carlo sampling and dynamic phase coloring.
+An interactive 3D simulation of electron probability density in hydrogen-like atomic orbitals ($s, p, d, f$) using Monte Carlo rejection sampling and dynamic phase coloring.
 
 👉 **[Live Demo / Vyzkoušet online](https://karelberka.github.io/orbital-simulator/)**
 
@@ -26,7 +26,7 @@ Místo prostého zobrazení hotových orbitálních tvarů simulátor ukazuje sa
 
 This simulator provides an interactive visualization of the hydrogen-like wave functions $\psi_{n,l,m}$ and electron probability densities $|\psi|^2$.
 
-Instead of just rendering static orbital surfaces, the application demonstrates the wave-particle duality. The electron's state is a wave of probability, but upon measurement, it collapses into a single discrete point in space. By repeatedly clicking the simulation buttons, points accumulate using Monte Carlo sampling, gradually forming the visual shape of the selected orbital.
+Instead of just rendering static orbital surfaces, the application demonstrates the wave-particle duality. The electron's state is a wave of probability, but upon measurement, it collapses into a single discrete point in space. By repeatedly clicking the simulation buttons, points accumulate using Monte Carlo rejection sampling, gradually forming the visual shape of the selected orbital.
 
 ### Key Features:
 *   **Interactive 3D View (Three.js)**: OrbitControls (pan, zoom, rotate) with optional auto-rotation.
