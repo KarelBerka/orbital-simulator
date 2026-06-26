@@ -187,6 +187,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Nastavení výchozího stavu orbitalu
     updateOrbitalState(1, 0, 0);
+    updateLegendColors();
     
     // Nastavení výchozího jazyka (Čeština)
     setLanguage('cs');
@@ -205,6 +206,7 @@ function setupThreeControls() {
         recolorPoints();
         updateBoundaryContours();
         updateSliceCanvas();
+        updateLegendColors();
     });
     
     toggleGrid.addEventListener('change', (e) => {
@@ -242,6 +244,7 @@ function setupThreeControls() {
         recolorPoints();
         updateBoundaryContours();
         updateSliceCanvas();
+        updateLegendColors();
     });
 
     btnLangToggle.addEventListener('click', () => {
@@ -856,12 +859,12 @@ function setLanguage(lang) {
     
     // Tlačítko přepínání jazyků ukazuje cílový jazyk pro přepnutí
     if (lang === 'cs') {
-        btnLangToggle.textContent = '🇬🇧 English';
-        btnLangToggle.title = 'Přepnout do angličtiny';
+        btnLangToggle.textContent = '🇬🇧';
+        btnLangToggle.title = 'Switch to English / Přepnout do angličtiny';
         document.documentElement.lang = 'cs';
     } else {
-        btnLangToggle.textContent = '🇨🇿 Čeština';
-        btnLangToggle.title = 'Switch to Czech';
+        btnLangToggle.textContent = '🇨🇿';
+        btnLangToggle.title = 'Switch to Czech / Přepnout do češtiny';
         document.documentElement.lang = 'en';
     }
     
@@ -893,5 +896,25 @@ function updateThemeButtonText() {
     } else {
         btnThemeToggle.textContent = isLight ? '🌙 Dark Mode' : '☀️ Light Mode';
         btnThemeToggle.title = 'Toggle light/dark mode';
+    }
+}
+
+/**
+ * Aktualizuje barvy v HTML legendě (barevné pilulky fází) podle aktuálního tématu a barevného schématu.
+ */
+function updateLegendColors() {
+    if (!visualizer) return;
+    const colorPosHex = '#' + visualizer.colorPos.getHexString();
+    const colorNegHex = '#' + visualizer.colorNeg.getHexString();
+    
+    const dotPos = document.querySelector('.dot-pos');
+    const dotNeg = document.querySelector('.dot-neg');
+    
+    if (dotPos && dotNeg) {
+        dotPos.style.backgroundColor = colorPosHex;
+        dotPos.style.boxShadow = `0 0 8px ${colorPosHex}80`;
+        
+        dotNeg.style.backgroundColor = colorNegHex;
+        dotNeg.style.boxShadow = `0 0 8px ${colorNegHex}80`;
     }
 }
