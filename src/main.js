@@ -194,6 +194,9 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Spuštění smyčky pro automatické generování bodů
     startAutoGenLoop();
+    
+    // Prověřit, zda je spuštěn automatický záchyt ikony (favicony)
+    checkAutoCapture();
 });
 
 function setupThreeControls() {
@@ -314,6 +317,7 @@ function setupPhysicsControls() {
     btnClear.addEventListener('click', () => {
         visualizer.clearPoints();
         updatePointCountUI();
+        triggerFaviconUpdate();
     });
 
     // Kliknutí na 2D řez otevře zvětšený náhled (modal)
@@ -443,6 +447,7 @@ function addElectrons(count) {
         visualizer.addPoint(pt.x, pt.y, pt.z, pt.phase, scale);
     }
     updatePointCountUI();
+    triggerFaviconUpdate();
 }
 
 /**
@@ -916,5 +921,114 @@ function updateLegendColors() {
         
         dotNeg.style.backgroundColor = colorNegHex;
         dotNeg.style.boxShadow = `0 0 8px ${colorNegHex}80`;
+    }
+}
+
+/**
+ * Aktualizuje faviconu v prohlížeči z aktuálně vykreslené 3D scény v WebGL canvasu.
+ */
+function updateFaviconFromWebGLCanvas() {
+    if (!visualizer || !visualizer.renderer) return;
+    
+    const webglCanvas = visualizer.renderer.domElement;
+    if (!webglCanvas) return;
+    
+    const faviconSize = 64;
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = faviconSize;
+    tempCanvas.height = faviconSize;
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    const w = webglCanvas.width;
+    const h = webglCanvas.height;
+    const size = Math.min(w, h);
+    const sx = (w - size) / 2;
+    const sy = (h - size) / 2;
+    
+    const isLightMode = document.body.classList.contains('light-mode');
+    tempCtx.fillStyle = isLightMode ? '#f8fafc' : '#0b0e14';
+    tempCtx.fillRect(0, 0, faviconSize, faviconSize);
+    
+    tempCtx.drawImage(webglCanvas, sx, sy, size, size, 0, 0, faviconSize, faviconSize);
+    
+    try {
+        const dataUrl = tempCanvas.toDataURL('image/png');
+        let link = document.querySelector("link[rel~='icon']");
+        if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            link.type = 'image/png';
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href = dataUrl;
+    } catch (e) {
+        console.error('Error generating favicon:', e);
+    }
+}
+
+let faviconTimeout = null;
+function triggerFaviconUpdate() {
+    // Spouštíme s mírným zpožděním (debounce), aby se nesnižoval výkon při kontinuálním generování
+    if (faviconTimeout) clearTimeout(faviconTimeout);
+    faviconTimeout = setTimeout(() => {
+        updateFaviconFromWebGLCanvas();
+    }, 1000);
+}
+
+/**
+ * Kontroluje parametr url ?capture=true a pokud je přítomen, automaticky vygeneruje orbital 3dz2 s 5000 body,
+ * uloží jeho screenshot a odešle jej na lokální server.
+ */
+function checkAutoCapture() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('capture') === 'true') {
+        console.log('[AutoCapture] Spouštím automatické generování favicony...');
+        
+        // Nastavení na 3dz2 (n=3, l=2, m=0)
+        selectN.value = 3;
+        repopulateLSelect(3);
+        selectL.value = 2;
+        repopulateMSelect(2);
+        selectM.value = 0;
+        updateOrbitalState(3, 2, 0);
+        
+        // Přidáme 5000 bodů
+        addElectrons(5000);
+        
+        // Překreslíme WebGL přímo teď
+        visualizer.renderer.render(visualizer.scene, visualizer.camera);
+        
+        const webglCanvas = visualizer.renderer.domElement;
+        const faviconSize = 64;
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = faviconSize;
+        tempCanvas.height = faviconSize;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        const w = webglCanvas.width;
+        const h = webglCanvas.height;
+        const size = Math.min(w, h);
+        const sx = (w - size) / 2;
+        const sy = (h - size) / 2;
+        
+        tempCtx.fillStyle = '#0b0e14';
+        tempCtx.fillRect(0, 0, faviconSize, faviconSize);
+        tempCtx.drawImage(webglCanvas, sx, sy, size, size, 0, 0, faviconSize, faviconSize);
+        
+        tempCanvas.toBlob((blob) => {
+            console.log('[AutoCapture] Odesílám obrázek na server...');
+            fetch('/save-favicon', {
+                method: 'POST',
+                body: blob
+            })
+            .then(res => res.text())
+            .then(text => {
+                console.log('[AutoCapture] Odpověď serveru:', text);
+                alert('Favicon captured and saved successfully! Server is exiting...');
+            })
+            .catch(err => {
+                console.error('[AutoCapture] Chyba ukládání favicony:', err);
+            });
+        }, 'image/png');
     }
 }
