@@ -87,6 +87,57 @@ body.light-mode .canvas-overlay .overlay-item span {
     color: var(--text-main);
 }
 
+body.light-mode #sidebar {
+    background: #ffffff;
+    border-right: 1px solid var(--bg-card-border);
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+body.light-mode .sidebar-section h2 {
+    color: var(--text-main);
+}
+
+body.light-mode .quantum-value-select {
+    color: var(--text-main);
+}
+
+body.light-mode .stat-value {
+    color: var(--text-main);
+}
+
+body.light-mode .node-list b {
+    color: var(--text-main);
+}
+
+body.light-mode .math-box {
+    background: rgba(79, 70, 229, 0.04);
+    border-color: rgba(79, 70, 229, 0.2);
+    color: var(--text-main);
+}
+
+body.light-mode .btn-secondary {
+    background: rgba(15, 23, 42, 0.05);
+    border-color: rgba(15, 23, 42, 0.1);
+    color: var(--text-main);
+}
+
+body.light-mode .btn-secondary:hover {
+    background: rgba(15, 23, 42, 0.09);
+}
+
+body.light-mode .btn-danger {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.25);
+    color: #dc2626;
+}
+
+body.light-mode .btn-danger:hover {
+    background: rgba(220, 38, 38, 0.15);
+}
+
+body.light-mode .range-slider {
+    background: rgba(15, 23, 42, 0.1);
+}
 
 * {
     box-sizing: border-box;
@@ -558,6 +609,10 @@ input:checked + .slider:before {
 
 .node-list li {
     margin-bottom: 0.25rem;
+}
+
+.node-list b {
+    color: #fff;
 }
 
 /* Vizualizační překryvné prvky na plátně */
