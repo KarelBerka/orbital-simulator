@@ -69,7 +69,9 @@ const TRANSLATIONS = {
         'normalize-brightness': 'Normalizovaný jas bodů',
         'help-rotate': '🖱️ <b>Levé tlačítko:</b> Rotace scény',
         'help-zoom': '⚙️ <b>Kolečko:</b> Přiblížení (Zoom)',
-        'help-pan': '✋ <b>Pravé tlačítko:</b> Posun scény'
+        'help-pan': '✋ <b>Pravé tlačítko:</b> Posun scény',
+        'github-repo': 'GitHub Repozitář',
+        'authors-list': 'Autoři: Karel Berka (UPOL) & Lukáš Peterka (VŠCHT)'
     },
     en: {
         'meta-title': '3D Atomic Orbitals Simulator',
@@ -121,7 +123,9 @@ const TRANSLATIONS = {
         'normalize-brightness': 'Normalized point brightness',
         'help-rotate': '🖱️ <b>Left button:</b> Rotate scene',
         'help-zoom': '⚙️ <b>Scroll wheel:</b> Zoom',
-        'help-pan': '✋ <b>Right button:</b> Pan scene'
+        'help-pan': '✋ <b>Right button:</b> Pan scene',
+        'github-repo': 'GitHub Repository',
+        'authors-list': 'Authors: Karel Berka (UPOL) & Lukáš Peterka (VŠCHT)'
     }
 };
 
