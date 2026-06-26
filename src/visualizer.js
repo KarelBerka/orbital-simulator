@@ -115,28 +115,27 @@ export class OrbitalVisualizer {
         this.pointCloud = new THREE.Points(this.geometry, this.material);
         this.scene.add(this.pointCloud);
 
-        // Inicializace bodů pro teoretický obal orbitalu (final shape boundary shell)
-        this.boundaryGeometry = new THREE.BufferGeometry();
-        this.maxBoundaryPoints = 60000;
-        this.boundaryPositions = new Float32Array(this.maxBoundaryPoints * 3);
-        this.boundaryColors = new Float32Array(this.maxBoundaryPoints * 3);
+        // Inicializace 3D obrysového/konturového modelu (wireframe contour lines)
+        this.contourGeometry = new THREE.BufferGeometry();
+        this.maxContourVertices = 120000; // maximální počet vrcholů pro čáry
+        this.contourPositions = new Float32Array(this.maxContourVertices * 3);
+        this.contourColors = new Float32Array(this.maxContourVertices * 3);
         
-        this.boundaryGeometry.setAttribute('position', new THREE.BufferAttribute(this.boundaryPositions, 3));
-        this.boundaryGeometry.setAttribute('color', new THREE.BufferAttribute(this.boundaryColors, 3));
-        this.boundaryGeometry.setDrawRange(0, 0);
+        this.contourGeometry.setAttribute('position', new THREE.BufferAttribute(this.contourPositions, 3));
+        this.contourGeometry.setAttribute('color', new THREE.BufferAttribute(this.contourColors, 3));
+        this.contourGeometry.setDrawRange(0, 0);
         
-        this.boundaryMaterial = new THREE.PointsMaterial({
-            size: this.pointSize * 0.75,
+        this.contourMaterial = new THREE.LineBasicMaterial({
             vertexColors: true,
             transparent: true,
-            opacity: 0.28,
-            map: texture,
+            opacity: 0.6,
             blending: THREE.AdditiveBlending,
-            depthWrite: false
+            depthWrite: false,
+            linewidth: 1.5
         });
         
-        this.boundaryPointCloud = new THREE.Points(this.boundaryGeometry, this.boundaryMaterial);
-        this.scene.add(this.boundaryPointCloud);
+        this.contourLines = new THREE.LineSegments(this.contourGeometry, this.contourMaterial);
+        this.scene.add(this.contourLines);
     }
 
     /**
@@ -144,8 +143,6 @@ export class OrbitalVisualizer {
      */
     addPoint(x, y, z, phase, scale = 1.0) {
         if (this.pointCount >= this.maxPoints) {
-            // Pokud přeteče limit, vymažeme nejstarší body (kruhová fronta) nebo ignorujeme
-            // Pro jednoduchost budeme ignorovat
             return;
         }
 
@@ -186,9 +183,6 @@ export class OrbitalVisualizer {
     setPointSize(size) {
         this.pointSize = size;
         this.material.size = size;
-        if (this.boundaryMaterial) {
-            this.boundaryMaterial.size = size * 0.75;
-        }
     }
 
     /**
@@ -206,36 +200,28 @@ export class OrbitalVisualizer {
     }
 
     /**
-     * Přepne viditelnost teoretického obalu orbitalu.
+     * Přepne viditelnost teoretického obrysového modelu orbitalu.
      */
     toggleBoundaryShell(visible) {
-        this.boundaryPointCloud.visible = visible;
+        this.contourLines.visible = visible;
     }
 
     /**
-     * Vykreslí body tvořící vnější obal orbitalu (izoplochu).
+     * Vykreslí čáry tvořící 3D obrysový (konturový) model orbitalu.
      */
-    updateBoundaryShell(pointsData) {
-        const count = Math.min(pointsData.length, this.maxBoundaryPoints);
+    updateContourLines(verticesData, colorsData) {
+        const count = Math.min(verticesData.length, this.maxContourVertices * 3);
         
         for (let i = 0; i < count; i++) {
-            const pt = pointsData[i];
-            const idx = i * 3;
-            this.boundaryPositions[idx] = pt.x;
-            this.boundaryPositions[idx + 1] = pt.y;
-            this.boundaryPositions[idx + 2] = pt.z;
-            
-            const color = pt.phase >= 0 ? this.colorPos : this.colorNeg;
-            this.boundaryColors[idx] = color.r;
-            this.boundaryColors[idx + 1] = color.g;
-            this.boundaryColors[idx + 2] = color.b;
+            this.contourPositions[i] = verticesData[i];
+            this.contourColors[i] = colorsData[i];
         }
         
-        this.boundaryGeometry.attributes.position.needsUpdate = true;
-        this.boundaryGeometry.attributes.color.needsUpdate = true;
-        this.boundaryGeometry.computeBoundingSphere();
-        this.boundaryGeometry.computeBoundingBox();
-        this.boundaryGeometry.setDrawRange(0, count);
+        this.contourGeometry.attributes.position.needsUpdate = true;
+        this.contourGeometry.attributes.color.needsUpdate = true;
+        this.contourGeometry.computeBoundingSphere();
+        this.contourGeometry.computeBoundingBox();
+        this.contourGeometry.setDrawRange(0, count / 3);
     }
 
     /**
@@ -248,16 +234,14 @@ export class OrbitalVisualizer {
         if (theme === 'light') {
             this.scene.background.set('#f8fafc');
             
-            // Ve světlém režimu změníme prolínání (blending) na standardní,
-            // jinak jsou neonové barvy na bílém pozadí neviditelné.
             this.material.blending = THREE.NormalBlending;
             this.material.opacity = 0.82;
             this.material.needsUpdate = true;
             
-            if (this.boundaryMaterial) {
-                this.boundaryMaterial.blending = THREE.NormalBlending;
-                this.boundaryMaterial.opacity = 0.38;
-                this.boundaryMaterial.needsUpdate = true;
+            if (this.contourMaterial) {
+                this.contourMaterial.blending = THREE.NormalBlending;
+                this.contourMaterial.opacity = 0.7; // Čáry jsou ve světlém režimu lépe vidět s vyšší opacitou
+                this.contourMaterial.needsUpdate = true;
             }
             
             const gridVisible = this.gridHelper.visible;
@@ -269,15 +253,14 @@ export class OrbitalVisualizer {
         } else {
             this.scene.background.set('#0b0e14');
             
-            // Vrátíme aditivní záření pro tmavý režim
             this.material.blending = THREE.AdditiveBlending;
             this.material.opacity = 0.85;
             this.material.needsUpdate = true;
             
-            if (this.boundaryMaterial) {
-                this.boundaryMaterial.blending = THREE.AdditiveBlending;
-                this.boundaryMaterial.opacity = 0.28;
-                this.boundaryMaterial.needsUpdate = true;
+            if (this.contourMaterial) {
+                this.contourMaterial.blending = THREE.AdditiveBlending;
+                this.contourMaterial.opacity = 0.6;
+                this.contourMaterial.needsUpdate = true;
             }
             
             const gridVisible = this.gridHelper.visible;
@@ -290,7 +273,7 @@ export class OrbitalVisualizer {
     }
 
     /**
-     * Nastaví barevné schéma bodů.
+     * Nastaví barevné schéma bodů a čar.
      */
     setColorScheme(scheme) {
         this.currentScheme = scheme;
@@ -332,16 +315,16 @@ export class OrbitalVisualizer {
     animate() {
         requestAnimationFrame(() => this.animate());
 
-        // Automatické otáčení scény (synchronizované pro oba mraky bodů)
+        // Automatické otáčení scény (synchronizované pro body i čáry kontur)
         if (this.autoRotate) {
             this.pointCloud.rotation.y += 0.002;
-            if (this.boundaryPointCloud) {
-                this.boundaryPointCloud.rotation.y = this.pointCloud.rotation.y;
+            if (this.contourLines) {
+                this.contourLines.rotation.y = this.pointCloud.rotation.y;
             }
         } else {
             this.pointCloud.rotation.y = 0;
-            if (this.boundaryPointCloud) {
-                this.boundaryPointCloud.rotation.y = 0;
+            if (this.contourLines) {
+                this.contourLines.rotation.y = 0;
             }
         }
 

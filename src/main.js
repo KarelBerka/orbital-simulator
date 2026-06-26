@@ -1,7 +1,7 @@
 import { getOrbitalParams, waveFunction, probabilityDensity } from './math.js';
 import { OrbitalVisualizer } from './visualizer.js';
 
-// Konstanta s názvy orbitalů pro zobrazení
+// Konstanty s názvy orbitalů pro zobrazení
 const ORBITAL_NAMES = {
     0: { 0: 's' },
     1: { '-1': 'p_y', 0: 'p_z', 1: 'p_x' },
@@ -17,6 +17,114 @@ const ORBITAL_NAMES = {
     }
 };
 
+// Slovník překladů pro vícejazyčnou podporu (CZ / EN)
+const TRANSLATIONS = {
+    cs: {
+        'meta-title': '3D Simulátor Atomových Orbitalů',
+        'app-title': 'Atomové Orbitaly <span>Simulátor</span>',
+        'app-subtitle': 'Vizualizace hustoty pravděpodobnosti výskytu elektronu pomocí Monte Carlo vzorkování',
+        'orbital-selection': 'Výběr Orbitalu',
+        'quantum-numbers': 'Kvantová čísla',
+        'n-label': 'Hlavní (n)',
+        'l-label': 'Vedlejší (l)',
+        'm-label': 'Magnetické (m)',
+        'quick-presets': 'Rychlé předvolby',
+        'generate-positions': 'Generování poloh elektronu',
+        'add-1-title': 'Stanoví jednu polohu elektronu',
+        'add-100-title': 'Stanoví 100 poloh',
+        'add-1000-title': 'Stanoví 1000 poloh',
+        'auto-generation': 'Automatické generování',
+        'generation-speed': 'Rychlost generování',
+        'speed-slow': 'Pomalá',
+        'speed-fast': 'Ultra rychlá',
+        'clear-points': 'Vymazat body',
+        'status-phase': 'Stav a fáze',
+        'measured-positions': 'Naměřené polohy',
+        'phase-pos': 'Fáze $+$',
+        'phase-neg': 'Fáze $-$',
+        '2d-slice': '2D Řez orbitalem',
+        'plane-xy': 'Rovina XY (z = 0)',
+        'plane-xz': 'Rovina XZ (y = 0)',
+        'plane-yz': 'Rovina YZ (x = 0)',
+        'math-description': 'Matematický popis',
+        'theory-para': 'Vlnová funkce $\\psi_{n,l,m}$ popisuje stacionární stav elektronu. Výskyt elektronu (hustota pravděpodobnosti) je dán kvadrátem vlnové funkce $|\\psi|^2$.',
+        'nodal-surfaces-title': 'Uzlové plochy (místa s nulovou pravděpodobností)',
+        'radial-nodes-label': 'Radiální uzlové plochy ($n-l-1$):',
+        'angular-nodes-label': 'Úhlové uzlové plochy ($l$):',
+        'total-nodes-label': 'Celkem uzlových ploch ($n-1$):',
+        'vis-appearance': 'Zobrazení a vzhled',
+        'point-size': 'Velikost bodů',
+        'phase-colors': 'Barevné schéma fází',
+        'color-orange-cyan': 'Oranžová / Tyrkysová',
+        'color-classic': 'Červená / Modrá',
+        'color-pink-green': 'Růžová / Zelená',
+        'color-purple-yellow': 'Fialová / Žlutá',
+        'boundary-threshold': 'Práh tvaru orbitalu (izoplocha)',
+        'larger-shell': 'Větší obal',
+        'smaller-core': 'Menší jádro',
+        'origin-grid': 'Mřížka počátku',
+        'show-axes': 'Zobrazit osy XYZ',
+        'auto-rotate': 'Auto-rotace scény',
+        'theoretical-shape': 'Teoretický tvar (konturový model)',
+        'normalize-brightness': 'Normalizovaný jas bodů',
+        'help-rotate': '🖱️ <b>Levé tlačítko:</b> Rotace scény',
+        'help-zoom': '⚙️ <b>Kolečko:</b> Přiblížení (Zoom)',
+        'help-pan': '✋ <b>Pravé tlačítko:</b> Posun scény'
+    },
+    en: {
+        'meta-title': '3D Atomic Orbitals Simulator',
+        'app-title': 'Atomic Orbitals <span>Simulator</span>',
+        'app-subtitle': 'Visualization of electron probability density using Monte Carlo rejection sampling',
+        'orbital-selection': 'Orbital Selection',
+        'quantum-numbers': 'Quantum Numbers',
+        'n-label': 'Principal (n)',
+        'l-label': 'Azimuthal (l)',
+        'm-label': 'Magnetic (m)',
+        'quick-presets': 'Quick Presets',
+        'generate-positions': 'Generate Electron Positions',
+        'add-1-title': 'Determine one electron position',
+        'add-100-title': 'Determine 100 positions',
+        'add-1000-title': 'Determine 1000 positions',
+        'auto-generation': 'Auto-generation',
+        'generation-speed': 'Generation Speed',
+        'speed-slow': 'Slow',
+        'speed-fast': 'Ultra fast',
+        'clear-points': 'Clear points',
+        'status-phase': 'Status and Phase',
+        'measured-positions': 'Measured positions',
+        'phase-pos': 'Phase $+$',
+        'phase-neg': 'Phase $-$',
+        '2d-slice': '2D Orbital Slice',
+        'plane-xy': 'XY Plane (z = 0)',
+        'plane-xz': 'XZ Plane (y = 0)',
+        'plane-yz': 'YZ Plane (x = 0)',
+        'math-description': 'Mathematical Description',
+        'theory-para': 'The wave function $\\psi_{n,l,m}$ describes the stationary state of the electron. The probability density of finding the electron is given by the square of the wave function $|\\psi|^2$.',
+        'nodal-surfaces-title': 'Nodal surfaces (places with zero probability)',
+        'radial-nodes-label': 'Radial nodal surfaces ($n-l-1$):',
+        'angular-nodes-label': 'Angular nodal surfaces ($l$):',
+        'total-nodes-label': 'Total nodal surfaces ($n-1$):',
+        'vis-appearance': 'Visualization and Appearance',
+        'point-size': 'Point Size',
+        'phase-colors': 'Phase Color Scheme',
+        'color-orange-cyan': 'Orange / Cyan',
+        'color-classic': 'Red / Blue',
+        'color-pink-green': 'Pink / Green',
+        'color-purple-yellow': 'Purple / Yellow',
+        'boundary-threshold': 'Orbital shape threshold (isosurface)',
+        'larger-shell': 'Larger shell',
+        'smaller-core': 'Smaller core',
+        'origin-grid': 'Origin Grid',
+        'show-axes': 'Show XYZ Axes',
+        'auto-rotate': 'Auto-rotate Scene',
+        'theoretical-shape': 'Theoretical shape (contour model)',
+        'normalize-brightness': 'Normalized point brightness',
+        'help-rotate': '🖱️ <b>Left button:</b> Rotate scene',
+        'help-zoom': '⚙️ <b>Scroll wheel:</b> Zoom',
+        'help-pan': '✋ <b>Right button:</b> Pan scene'
+    }
+};
+
 // Globální stav aplikace
 let visualizer = null;
 let currentN = 1;
@@ -26,6 +134,7 @@ let Rmax = 7;
 let Pmax = 1;
 let autoGenInterval = null;
 let slicePlane = 'xy';
+let currentLang = 'cs';
 
 // Elementy UI
 const selectN = document.getElementById('select-n');
@@ -42,6 +151,7 @@ const sliceCanvas = document.getElementById('slice-canvas');
 const selectSlicePlane = document.getElementById('select-slice-plane');
 const equationBox = document.getElementById('equation-box');
 const btnThemeToggle = document.getElementById('btn-theme-toggle');
+const btnLangToggle = document.getElementById('btn-lang-toggle');
 
 // Uzlové statistiky
 const valRadialNodes = document.getElementById('val-radial-nodes');
@@ -69,8 +179,11 @@ window.addEventListener('DOMContentLoaded', () => {
     // Propojení fyzikálních ovládacích prvků
     setupPhysicsControls();
     
-    // Nastavení výchozího stavu
+    // Nastavení výchozího stavu orbitalu
     updateOrbitalState(1, 0, 0);
+    
+    // Nastavení výchozího jazyka (Čeština)
+    setLanguage('cs');
     
     // Spuštění smyčky pro automatické generování bodů
     startAutoGenLoop();
@@ -84,6 +197,7 @@ function setupThreeControls() {
     selectColors.addEventListener('change', (e) => {
         visualizer.setColorScheme(e.target.value);
         recolorPoints();
+        updateBoundaryContours();
         updateSliceCanvas();
     });
     
@@ -108,23 +222,25 @@ function setupThreeControls() {
     });
     
     sliderBoundaryIso.addEventListener('input', () => {
-        const boundaryPts = generateBoundaryPoints(currentN, currentL, currentM, Rmax, Pmax);
-        visualizer.updateBoundaryShell(boundaryPts);
+        updateBoundaryContours();
     });
     
     btnThemeToggle.addEventListener('click', () => {
         const isLight = document.body.classList.toggle('light-mode');
         if (isLight) {
-            btnThemeToggle.textContent = '🌙 Tmavý režim';
             visualizer.setTheme('light');
         } else {
-            btnThemeToggle.textContent = '☀️ Světlý režim';
             visualizer.setTheme('dark');
         }
+        updateThemeButtonText();
         recolorPoints();
-        const boundaryPts = generateBoundaryPoints(currentN, currentL, currentM, Rmax, Pmax);
-        visualizer.updateBoundaryShell(boundaryPts);
+        updateBoundaryContours();
         updateSliceCanvas();
+    });
+
+    btnLangToggle.addEventListener('click', () => {
+        const nextLang = currentLang === 'cs' ? 'en' : 'cs';
+        setLanguage(nextLang);
     });
 }
 
@@ -169,8 +285,7 @@ function setupPhysicsControls() {
             selectN.value = n;
             repopulateLSelect(n);
             selectL.value = l;
-            repopulateMSelect(l);
-            selectM.value = m;
+            repopulateMSelect(l, m);
             
             updateOrbitalState(n, l, m);
         });
@@ -200,7 +315,6 @@ function repopulateLSelect(n) {
     const prevVal = selectL.value;
     selectL.innerHTML = '';
     
-    // Limitujeme do l=3 (f-orbitaly), i když n je větší
     const maxL = Math.min(n - 1, 3);
     
     const labels = ['0 (s)', '1 (p)', '2 (d)', '3 (f)'];
@@ -211,7 +325,6 @@ function repopulateLSelect(n) {
         selectL.appendChild(opt);
     }
     
-    // Pokusíme se zachovat předchozí hodnotu, pokud je stále validní
     if (parseInt(prevVal) <= maxL) {
         selectL.value = prevVal;
     } else {
@@ -222,21 +335,19 @@ function repopulateLSelect(n) {
 /**
  * Dynamicky naplní select pro M podle zvoleného L
  */
-function repopulateMSelect(l) {
+function repopulateMSelect(l, preserveVal = 0) {
     selectM.innerHTML = '';
     
     for (let m = -l; m <= l; m++) {
         const opt = document.createElement('option');
         opt.value = m;
         
-        // Získání chemického názvu (např. p_x, d_z^2)
         const name = ORBITAL_NAMES[l]?.[m] || m;
         opt.textContent = `${m} (${name})`;
         selectM.appendChild(opt);
     }
     
-    // Vždy nastavíme prostřední (např. 0) jako výchozí
-    selectM.value = 0;
+    selectM.value = preserveVal;
 }
 
 /**
@@ -252,12 +363,11 @@ function updateOrbitalState(n, l, m) {
     Rmax = params.Rmax;
     Pmax = params.Pmax;
     
-    // Generování a vykreslení teoretického tvaru orbitalu (hranice/obal)
-    const boundaryPts = generateBoundaryPoints(n, l, m, Rmax, Pmax);
-    visualizer.updateBoundaryShell(boundaryPts);
+    // Generování a vykreslení teoretického tvaru orbitalu (3D vrstevnice)
+    updateBoundaryContours();
     visualizer.toggleBoundaryShell(toggleBoundary.checked);
     
-    // Smazání stávajících bodů (požadavek uživatele)
+    // Smazání stávajících bodů
     visualizer.clearPoints();
     updatePointCountUI();
     
@@ -269,11 +379,9 @@ function updateOrbitalState(n, l, m) {
     
     // Zrušení označení presetu, pokud aktuální stav neodpovídá žádnému tlačítku
     const presetButtons = document.querySelectorAll('.btn-preset');
-    let matchedPreset = false;
     presetButtons.forEach(btn => {
         if (parseInt(btn.dataset.n) === n && parseInt(btn.dataset.l) === l && parseInt(btn.dataset.m) === m) {
             btn.classList.add('active');
-            matchedPreset = true;
         } else {
             btn.classList.remove('active');
         }
@@ -285,7 +393,6 @@ function updateOrbitalState(n, l, m) {
  */
 function addElectrons(count) {
     const normalizeColor = toggleNormalizeColor.checked;
-    // Generování bodů pomocí Rejection Samplingu
     for (let i = 0; i < count; i++) {
         const pt = sampleElectronPosition(currentN, currentL, currentM, Rmax, Pmax);
         
@@ -309,28 +416,24 @@ function sampleElectronPosition(n, l, m, Rmax, Pmax) {
     
     while (attempts < maxAttempts) {
         attempts++;
-        // Náhodný bod v krychli [-Rmax, Rmax]^3
         const x = (Math.random() * 2 - 1) * Rmax;
         const y = (Math.random() * 2 - 1) * Rmax;
         const z = (Math.random() * 2 - 1) * Rmax;
         
-        // Hodnota vlnové funkce v tomto bodě
         const psi = waveFunction(n, l, m, x, y, z);
         const P = psi * psi;
         
-        // Rejection sampling test
         const P_rand = Math.random() * Pmax;
         if (P_rand < P) {
             return { x, y, z, phase: psi };
         }
     }
     
-    // Fallback v případě selhání (např. extrémní numerický podtečení)
     return { x: 0, y: 0, z: 0, phase: 0 };
 }
 
 function updatePointCountUI() {
-    statCount.textContent = visualizer.pointCount.toLocaleString('cs-CZ');
+    statCount.textContent = visualizer.pointCount.toLocaleString(currentLang === 'cs' ? 'cs-CZ' : 'en-US');
 }
 
 /**
@@ -346,7 +449,6 @@ function updateSliceCanvas() {
     const colorNeg = visualizer.colorNeg;
     const isLightMode = document.body.classList.contains('light-mode');
     
-    // Vzorkování 2D plochy
     for (let py = 0; py < height; py++) {
         for (let px = 0; px < width; px++) {
             const fx = ((px / width) * 2 - 1) * Rmax;
@@ -385,7 +487,6 @@ function updateSliceCanvas() {
     
     ctx.putImageData(imgData, 0, 0);
     
-    // Nakreslení tenkých dělících os
     ctx.strokeStyle = isLightMode ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.15)';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -402,15 +503,12 @@ function updateSliceCanvas() {
 function startAutoGenLoop() {
     const genStep = () => {
         if (toggleAuto.checked) {
-            // Rychlost: počet bodů na jeden animační snímek (1 až 15 bodů)
             const speed = parseInt(sliderSpeed.value);
             const pointsPerFrame = Math.max(1, Math.floor(speed / 8));
-            
             addElectrons(pointsPerFrame);
         }
         requestAnimationFrame(genStep);
     };
-    
     requestAnimationFrame(genStep);
 }
 
@@ -418,7 +516,6 @@ function startAutoGenLoop() {
  * Vygeneruje LaTeX kód rovnice a aktualizuje uzlové statistiky
  */
 function updateTheoryPanel() {
-    // Uzlové statistiky
     const radialNodes = currentN - currentL - 1;
     const angularNodes = currentL;
     const totalNodes = currentN - 1;
@@ -427,11 +524,9 @@ function updateTheoryPanel() {
     valAngularNodes.textContent = angularNodes;
     valTotalNodes.textContent = totalNodes;
     
-    // Generování LaTeXu
     const latex = getLatexFormula(currentN, currentL, currentM);
     equationBox.innerHTML = latex;
     
-    // Vyžádání překreslení od MathJax
     if (window.MathJax && window.MathJax.typesetPromise) {
         window.MathJax.typesetPromise([equationBox]).catch(err => console.error(err));
     }
@@ -443,7 +538,6 @@ function updateTheoryPanel() {
 function getLatexFormula(n, l, m) {
     let radialLatex = '';
     
-    // Specifické případy pro jednodušší zobrazení
     if (n === 1 && l === 0) {
         radialLatex = '2 e^{-r}';
     } else if (n === 2 && l === 0) {
@@ -457,7 +551,6 @@ function getLatexFormula(n, l, m) {
     } else if (n === 3 && l === 2) {
         radialLatex = '\\frac{4}{81\\sqrt{30}} r^2 e^{-r/3}';
     } else {
-        // Obecný zápis
         const k = n - l - 1;
         const alpha = 2 * l + 1;
         radialLatex = `N_{${n},${l}} \\cdot e^{-\\frac{r}{${n}}} \\cdot \\left(\\frac{2r}{${n}}\\right)^{${l}} L_{${k}}^{${alpha}}\\left(\\frac{2r}{${n}}\\right)`;
@@ -492,61 +585,161 @@ function getLatexFormula(n, l, m) {
 }
 
 /**
- * Vygeneruje mrak bodů na rozhraní (izoploše) teoretického tvaru orbitalu.
+ * Vygeneruje 3D kontury (čáry vrstevnic) na ortogonálních řezech prostoru pro kladné i záporné laloky.
+ * Používá algoritmus Marching Squares aplikovaný na řezech podél X, Y a Z.
  */
-function generateBoundaryPoints(n, l, m, Rmax, Pmax) {
-    const points = [];
-    const N = 40; // Jemnost mřížky 40x40x40 (cca 64 000 bodů)
+function generateContourLines(n, l, m, Rmax, Pmax) {
+    const vertices = [];
+    const colors = [];
     
     const isoVal = parseFloat(sliderBoundaryIso.value);
-    const threshold = isoVal * Pmax;
+    const C = isoVal * Pmax;
+    const thresholdVal = Math.sqrt(C); // vlnová funkce psi se rovná +/- thresholdVal pro hustotu C
     
-    const grid = new Float32Array(N * N * N);
-    const phases = new Float32Array(N * N * N);
+    const N_slices = 13; // Počet řezů na osu (liché číslo, aby byl řez přesně v 0)
+    const S = 40;        // Rozlišení mřížky řezu (40x40 buněk)
     
-    // Spočítáme hodnoty na mřížce
-    for (let z = 0; z < N; z++) {
-        const fz = ((z / (N - 1)) * 2 - 1) * Rmax;
-        for (let y = 0; y < N; y++) {
-            const fy = ((y / (N - 1)) * 2 - 1) * Rmax;
-            for (let x = 0; x < N; x++) {
-                const fx = ((x / (N - 1)) * 2 - 1) * Rmax;
-                
-                const psi = waveFunction(n, l, m, fx, fy, fz);
-                const idx = x + y * N + z * N * N;
-                grid[idx] = psi * psi;
-                phases[idx] = psi;
-            }
-        }
+    const colorPos = visualizer.colorPos;
+    const colorNeg = visualizer.colorNeg;
+    
+    // Pomocná funkce pro lineární interpolaci
+    function interpolate(pA, pB, vA, vB, T) {
+        const t = (T - vA) / (vB - vA);
+        return {
+            x: pA.x + t * (pB.x - pA.x),
+            y: pA.y + t * (pB.y - pA.y)
+        };
     }
     
-    // Detekce přechodu přes práh (boundary voxels)
-    for (let z = 1; z < N - 1; z++) {
-        const fz = ((z / (N - 1)) * 2 - 1) * Rmax;
-        for (let y = 1; y < N - 1; y++) {
-            const fy = ((y / (N - 1)) * 2 - 1) * Rmax;
-            for (let x = 1; x < N - 1; x++) {
-                const idx = x + y * N + z * N * N;
-                const val = grid[idx];
+    // Procházíme 3 osy řezů: Z (roviny XY), Y (roviny XZ) a X (roviny YZ)
+    const axes = ['z', 'y', 'x'];
+    
+    for (const axis of axes) {
+        for (let k = -(N_slices - 1) / 2; k <= (N_slices - 1) / 2; k++) {
+            // Určíme souřadnici řezu (distribuujeme řezy v oblasti 85% z Rmax)
+            const sliceVal = (k / ((N_slices - 1) / 2)) * Rmax * 0.85;
+            
+            // Provádíme detekci vrstevnice pro obě znaménka fáze (+1 pro kladný, -1 pro záporný lalok)
+            const phaseSigns = [1, -1];
+            for (const phaseSign of phaseSigns) {
+                const T = thresholdVal;
                 
-                if (val >= threshold) {
-                    const n1 = grid[(x + 1) + y * N + z * N * N];
-                    const n2 = grid[(x - 1) + y * N + z * N * N];
-                    const n3 = grid[x + (y + 1) * N + z * N * N];
-                    const n4 = grid[x + (y - 1) * N + z * N * N];
-                    const n5 = grid[x + y * N + (z + 1) * N * N];
-                    const n6 = grid[x + y * N + (z - 1) * N * N];
-                    
-                    if (n1 < threshold || n2 < threshold || n3 < threshold || n4 < threshold || n5 < threshold || n6 < threshold) {
-                        const fx = ((x / (N - 1)) * 2 - 1) * Rmax;
-                        points.push({ x: fx, y: fy, z: fz, phase: phases[idx] });
+                // Spočítáme hodnoty vlnové funkce na 2D mřížce řezu
+                const gridValues = new Float32Array(S * S);
+                const gridPoints = new Array(S * S);
+                const step = (2 * Rmax) / (S - 1);
+                
+                for (let j = 0; j < S; j++) {
+                    const u = -Rmax + j * step;
+                    for (let i = 0; i < S; i++) {
+                        const v = -Rmax + i * step;
+                        
+                        let x = 0, y = 0, z = 0;
+                        if (axis === 'z') {
+                            x = v; y = u; z = sliceVal;
+                        } else if (axis === 'y') {
+                            x = v; y = sliceVal; z = u;
+                        } else if (axis === 'x') {
+                            x = sliceVal; y = v; z = u;
+                        }
+                        
+                        const psi = waveFunction(n, l, m, x, y, z);
+                        const idx = i + j * S;
+                        gridValues[idx] = phaseSign * psi; // Hledáme konturu kde phaseSign * psi = threshold
+                        gridPoints[idx] = { x: v, y: u };
+                    }
+                }
+                
+                // Marching Squares vrstevnicový tracer
+                for (let j = 0; j < S - 1; j++) {
+                    for (let i = 0; i < S - 1; i++) {
+                        const idx0 = i + j * S;
+                        const idx1 = (i + 1) + j * S;
+                        const idx2 = (i + 1) + (j + 1) * S;
+                        const idx3 = i + (j + 1) * S;
+                        
+                        const v0 = gridValues[idx0];
+                        const v1 = gridValues[idx1];
+                        const v2 = gridValues[idx2];
+                        const v3 = gridValues[idx3];
+                        
+                        const p0 = gridPoints[idx0];
+                        const p1 = gridPoints[idx1];
+                        const p2 = gridPoints[idx2];
+                        const p3 = gridPoints[idx3];
+                        
+                        let code = 0;
+                        if (v0 >= T) code |= 1;
+                        if (v1 >= T) code |= 2;
+                        if (v2 >= T) code |= 4;
+                        if (v3 >= T) code |= 8;
+                        
+                        if (code === 0 || code === 15) continue;
+                        
+                        let e0, e1, e2, e3;
+                        if ((v0 >= T) !== (v1 >= T)) e0 = interpolate(p0, p1, v0, v1, T);
+                        if ((v1 >= T) !== (v2 >= T)) e1 = interpolate(p1, p2, v1, v2, T);
+                        if ((v2 >= T) !== (v3 >= T)) e2 = interpolate(p2, p3, v2, v3, T);
+                        if ((v3 >= T) !== (v0 >= T)) e3 = interpolate(p3, p0, v3, v0, T);
+                        
+                        const color = phaseSign > 0 ? colorPos : colorNeg;
+                        
+                        const addSegment = (ptA, ptB) => {
+                            if (!ptA || !ptB) return;
+                            
+                            let ax = 0, ay = 0, az = 0;
+                            let bx = 0, by = 0, bz = 0;
+                            
+                            if (axis === 'z') {
+                                ax = ptA.x; ay = ptA.y; az = sliceVal;
+                                bx = ptB.x; by = ptB.y; bz = sliceVal;
+                            } else if (axis === 'y') {
+                                ax = ptA.x; ay = sliceVal; az = ptA.y;
+                                bx = ptB.x; by = sliceVal; bz = ptB.y;
+                            } else if (axis === 'x') {
+                                ax = sliceVal; ay = ptA.x; az = ptA.y;
+                                bx = sliceVal; by = ptB.x; bz = ptB.y;
+                            }
+                            
+                            vertices.push(ax, ay, az);
+                            vertices.push(bx, by, bz);
+                            
+                            colors.push(color.r, color.g, color.b);
+                            colors.push(color.r, color.g, color.b);
+                        };
+                        
+                        // Připojování segmentů na základě case kódu
+                        switch (code) {
+                            case 1:  addSegment(e3, e0); break;
+                            case 2:  addSegment(e0, e1); break;
+                            case 3:  addSegment(e3, e1); break;
+                            case 4:  addSegment(e1, e2); break;
+                            case 5:  addSegment(e3, e2); addSegment(e0, e1); break;
+                            case 6:  addSegment(e0, e2); break;
+                            case 7:  addSegment(e3, e2); break;
+                            case 8:  addSegment(e2, e3); break;
+                            case 9:  addSegment(e0, e2); break;
+                            case 10: addSegment(e0, e3); addSegment(e1, e2); break;
+                            case 11: addSegment(e1, e2); break;
+                            case 12: addSegment(e1, e3); break;
+                            case 13: addSegment(e0, e1); break;
+                            case 14: addSegment(e0, e3); break;
+                        }
                     }
                 }
             }
         }
     }
     
-    return points;
+    return { vertices, colors };
+}
+
+/**
+ * Aktualizuje 3D vrstevnicové čáry ve vizualizéru.
+ */
+function updateBoundaryContours() {
+    const contourData = generateContourLines(currentN, currentL, currentM, Rmax, Pmax);
+    visualizer.updateContourLines(contourData.vertices, contourData.colors);
 }
 
 /**
@@ -582,4 +775,71 @@ function recolorPoints() {
     }
     
     visualizer.geometry.attributes.color.needsUpdate = true;
+}
+
+/**
+ * Nastavení aktuálního jazyka rozhraní (CZ nebo EN).
+ */
+function setLanguage(lang) {
+    currentLang = lang;
+    
+    // Projít všechny elementy s data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) {
+            el.innerHTML = TRANSLATIONS[lang][key];
+        }
+    });
+    
+    // Projít všechny elementy s data-i18n-title pro tooltipy/titulky
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.dataset.i18nTitle;
+        if (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) {
+            el.title = TRANSLATIONS[lang][key];
+        }
+    });
+
+    // Aktualizovat texty závislé na stavu
+    updateThemeButtonText();
+    
+    // Tlačítko přepínání jazyků ukazuje cílový jazyk pro přepnutí
+    if (lang === 'cs') {
+        btnLangToggle.textContent = '🇬🇧 English';
+        btnLangToggle.title = 'Přepnout do angličtiny';
+        document.documentElement.lang = 'cs';
+    } else {
+        btnLangToggle.textContent = '🇨🇿 Čeština';
+        btnLangToggle.title = 'Switch to Czech';
+        document.documentElement.lang = 'en';
+    }
+    
+    // Repopulovat L a M selecty, aby se přeložily dynamické popisky
+    repopulateLSelect(currentN);
+    selectL.value = currentL;
+    repopulateMSelect(currentL, currentM);
+    
+    // Aktualizovat panel s teorií a rovnicí
+    updateTheoryPanel();
+    
+    // Aktualizovat statistiku bodů podle jazykového formátování
+    updatePointCountUI();
+    
+    // Vyžádat kompletní MathJax překreslení stránky (pro přečtení nových textů)
+    if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(err => console.error(err));
+    }
+}
+
+/**
+ * Pomocná funkce pro aktualizaci textu tlačítka motivu vzhledu podle jazyka a stavu.
+ */
+function updateThemeButtonText() {
+    const isLight = document.body.classList.contains('light-mode');
+    if (currentLang === 'cs') {
+        btnThemeToggle.textContent = isLight ? '🌙 Tmavý režim' : '☀️ Světlý režim';
+        btnThemeToggle.title = 'Přepnout světlý/tmavý režim';
+    } else {
+        btnThemeToggle.textContent = isLight ? '🌙 Dark Mode' : '☀️ Light Mode';
+        btnThemeToggle.title = 'Toggle light/dark mode';
+    }
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Simulátor Atomových Orbitalů</title>
+    <title data-i18n="meta-title">3D Simulátor Atomových Orbitalů</title>
     <!-- Google Fonts - Outfit a Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,12 +27,17 @@
 
     <header>
         <div>
-            <h1>Atomové Orbitaly <span>Simulátor</span></h1>
-            <p class="subtitle">Vizualizace hustoty pravděpodobnosti výskytu elektronu pomocí Monte Carlo vzorkování</p>
+            <h1 data-i18n="app-title">Atomové Orbitaly <span>Simulátor</span></h1>
+            <p class="subtitle" data-i18n="app-subtitle">Vizualizace hustoty pravděpodobnosti výskytu elektronu pomocí Monte Carlo vzorkování</p>
         </div>
-        <button id="btn-theme-toggle" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" title="Přepnout světlý/tmavý režim">
-            ☀️ Světlý režim
-        </button>
+        <div class="header-buttons" style="display: flex; gap: 0.5rem; align-items: center;">
+            <button id="btn-lang-toggle" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" title="Přepnout jazyk (CZ / EN)">
+                🇬🇧 English
+            </button>
+            <button id="btn-theme-toggle" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" title="Přepnout světlý/tmavý režim">
+                ☀️ Světlý režim
+            </button>
+        </div>
     </header>
 
     <main>
@@ -41,13 +46,13 @@
             
             <!-- Volba stavu / orbitalu -->
             <div class="sidebar-section">
-                <h2>Výběr Orbitalu</h2>
+                <h2 data-i18n="orbital-selection">Výběr Orbitalu</h2>
                 
                 <div class="control-group">
-                    <label>Kvantová čísla</label>
+                    <label data-i18n="quantum-numbers">Kvantová čísla</label>
                     <div class="quantum-grid">
                         <div class="quantum-select-wrapper">
-                            <div class="quantum-label">Hlavní (n)</div>
+                            <div class="quantum-label" data-i18n="n-label">Hlavní (n)</div>
                             <select id="select-n" class="quantum-value-select">
                                 <option value="1" selected>1</option>
                                 <option value="2">2</option>
@@ -57,13 +62,13 @@
                             </select>
                         </div>
                         <div class="quantum-select-wrapper">
-                            <div class="quantum-label">Vedlejší (l)</div>
+                            <div class="quantum-label" data-i18n="l-label">Vedlejší (l)</div>
                             <select id="select-l" class="quantum-value-select">
                                 <option value="0" selected>0 (s)</option>
                             </select>
                         </div>
                         <div class="quantum-select-wrapper">
-                            <div class="quantum-label">Magnetické (m)</div>
+                            <div class="quantum-label" data-i18n="m-label">Magnetické (m)</div>
                             <select id="select-m" class="quantum-value-select">
                                 <option value="0" selected>0 (s)</option>
                             </select>
@@ -72,7 +77,7 @@
                 </div>
 
                 <div class="control-group">
-                    <label>Rychlé předvolby</label>
+                    <label data-i18n="quick-presets">Rychlé předvolby</label>
                     <div class="preset-grid">
                         <button class="btn-preset active" data-n="1" data-l="0" data-m="0">1s</button>
                         <button class="btn-preset" data-n="2" data-l="0" data-m="0">2s</button>
@@ -88,23 +93,23 @@
 
             <!-- Simulace poloh elektronu -->
             <div class="sidebar-section">
-                <h2>Generování poloh elektronu</h2>
+                <h2 data-i18n="generate-positions">Generování poloh elektronu</h2>
                 
                 <div class="simulation-actions">
-                    <button id="btn-add-1" class="btn" title="Stanoví jednu polohu elektronu">
+                    <button id="btn-add-1" class="btn" title="Stanoví jednu polohu elektronu" data-i18n-title="add-1-title">
                         <span>+1</span>
                     </button>
-                    <button id="btn-add-100" class="btn btn-secondary" title="Stanoví 100 poloh">
+                    <button id="btn-add-100" class="btn btn-secondary" title="Stanoví 100 poloh" data-i18n-title="add-100-title">
                         <span>+100</span>
                     </button>
-                    <button id="btn-add-1000" class="btn btn-secondary" title="Stanoví 1000 poloh">
+                    <button id="btn-add-1000" class="btn btn-secondary" title="Stanoví 1000 poloh" data-i18n-title="add-1000-title">
                         <span>+1000</span>
                     </button>
                 </div>
                 
                 <div class="auto-generate-box">
                     <div class="toggle-row">
-                        <span style="font-size: 0.9rem; font-weight: 500;">Automatické generování</span>
+                        <span style="font-size: 0.9rem; font-weight: 500;" data-i18n="auto-generation">Automatické generování</span>
                         <label class="switch">
                             <input type="checkbox" id="toggle-auto">
                             <span class="slider"></span>
@@ -112,27 +117,27 @@
                     </div>
                     
                     <div class="control-group" style="margin-bottom: 0;">
-                        <label for="slider-speed">Rychlost generování</label>
+                        <label for="slider-speed" data-i18n="generation-speed">Rychlost generování</label>
                         <input type="range" id="slider-speed" class="range-slider" min="1" max="100" value="25">
                         <div class="slider-labels">
-                            <span>Pomalá</span>
-                            <span>Ultra rychlá</span>
+                            <span data-i18n="speed-slow">Pomalá</span>
+                            <span data-i18n="speed-fast">Ultra rychlá</span>
                         </div>
                     </div>
                 </div>
 
                 <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                    <button id="btn-clear" class="btn btn-danger" style="flex: 1;">Vymazat body</button>
+                    <button id="btn-clear" class="btn btn-danger" style="flex: 1;" data-i18n="clear-points">Vymazat body</button>
                 </div>
             </div>
 
             <!-- Stav simulace a 2D řez -->
             <div class="sidebar-section responsive-row-grid">
                 <div>
-                    <h2>Stav a fáze</h2>
+                    <h2 data-i18n="status-phase">Stav a fáze</h2>
                     <div class="stats-grid" style="grid-template-columns: 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
                         <div class="stat-card">
-                            <div class="stat-label">Naměřené polohy</div>
+                            <div class="stat-label" data-i18n="measured-positions">Naměřené polohy</div>
                             <div id="stat-count" class="stat-value">0</div>
                         </div>
                     </div>
@@ -140,23 +145,23 @@
                     <div class="phase-indicator">
                         <div class="phase-pill">
                             <div class="dot-pos"></div>
-                            <span>Fáze $+$</span>
+                            <span data-i18n="phase-pos">Fáze $+$</span>
                         </div>
                         <div class="phase-pill">
                             <div class="dot-neg"></div>
-                            <span>Fáze $-$</span>
+                            <span data-i18n="phase-neg">Fáze $-$</span>
                         </div>
                     </div>
                 </div>
                 
                 <div class="slice-container">
-                    <h2 style="margin-bottom: 0.25rem;">2D Řez orbitalem</h2>
+                    <h2 style="margin-bottom: 0.25rem;" data-i18n="2d-slice">2D Řez orbitalem</h2>
                     <canvas id="slice-canvas" width="200" height="200"></canvas>
                     <div class="slice-controls">
                         <select id="select-slice-plane" class="select-small" style="width: 100%;">
-                            <option value="xy" selected>Rovina XY (z = 0)</option>
-                            <option value="xz">Rovina XZ (y = 0)</option>
-                            <option value="yz">Rovina YZ (x = 0)</option>
+                            <option value="xy" selected data-i18n="plane-xy">Rovina XY (z = 0)</option>
+                            <option value="xz" data-i18n="plane-xz">Rovina XZ (y = 0)</option>
+                            <option value="yz" data-i18n="plane-yz">Rovina YZ (x = 0)</option>
                         </select>
                     </div>
                 </div>
@@ -164,55 +169,55 @@
 
             <!-- Matematický a fyzikální popis -->
             <div class="sidebar-section">
-                <h2>Matematický popis</h2>
+                <h2 data-i18n="math-description">Matematický popis</h2>
                 <div class="theory-text">
-                    <p>Vlnová funkce $\psi_{n,l,m}$ popisuje stacionární stav elektronu. Výskyt elektronu (hustota pravděpodobnosti) je dán kvadrátem vlnové funkce $|\psi|^2$.</p>
+                    <p data-i18n="theory-para">Vlnová funkce $\psi_{n,l,m}$ popisuje stacionární stav elektronu. Výskyt elektronu (hustota pravděpodobnosti) je dán kvadrátem vlnové funkce $|\psi|^2$.</p>
                 </div>
                 <div id="equation-box" class="math-box">
                     <!-- Zde bude rovnice vložena pomocí JS -->
                     $$\psi_{1,0,0}(r) = \frac{1}{\sqrt{\pi}} e^{-r}$$
                 </div>
                 <div class="theory-text" style="margin-top: 1rem;">
-                    <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; text-transform: uppercase;">Uzlové plochy (místa s nulovou pravděpodobností)</label>
+                    <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; text-transform: uppercase;" data-i18n="nodal-surfaces-title">Uzlové plochy (místa s nulovou pravděpodobností)</label>
                     <ul class="node-list">
-                        <li>Radiální uzlové plochy ($n-l-1$): <b id="val-radial-nodes" style="color: #fff;">0</b></li>
-                        <li>Úhlové uzlové plochy ($l$): <b id="val-angular-nodes" style="color: #fff;">0</b></li>
-                        <li>Celkem uzlových ploch ($n-1$): <b id="val-total-nodes" style="color: #fff;">0</b></li>
+                        <li><span data-i18n="radial-nodes-label">Radiální uzlové plochy ($n-l-1$):</span> <b id="val-radial-nodes" style="color: #fff;">0</b></li>
+                        <li><span data-i18n="angular-nodes-label">Úhlové uzlové plochy ($l$):</span> <b id="val-angular-nodes" style="color: #fff;">0</b></li>
+                        <li><span data-i18n="total-nodes-label">Celkem uzlových ploch ($n-1$):</span> <b id="val-total-nodes" style="color: #fff;">0</b></li>
                     </ul>
                 </div>
             </div>
 
             <!-- Nastavení zobrazení a vzhledu -->
             <div class="sidebar-section">
-                <h2>Zobrazení a vzhled</h2>
+                <h2 data-i18n="vis-appearance">Zobrazení a vzhled</h2>
                 
                 <div class="control-group">
-                    <label for="slider-point-size">Velikost bodů</label>
+                    <label for="slider-point-size" data-i18n="point-size">Velikost bodů</label>
                     <input type="range" id="slider-point-size" class="range-slider" min="1" max="10" step="0.5" value="3.5">
                 </div>
                 
                 <div class="control-group">
-                    <label for="select-colors">Barevné schéma fází</label>
+                    <label for="select-colors" data-i18n="phase-colors">Barevné schéma fází</label>
                     <select id="select-colors" class="select-small" style="width: 100%; padding: 0.5rem; height: auto;">
-                        <option value="orange-cyan" selected>Oranžová / Tyrkysová</option>
-                        <option value="classic">Červená / Modrá</option>
-                        <option value="pink-green">Růžová / Zelená</option>
-                        <option value="purple-yellow">Fialová / Žlutá</option>
+                        <option value="orange-cyan" selected data-i18n="color-orange-cyan">Oranžová / Tyrkysová</option>
+                        <option value="classic" data-i18n="color-classic">Červená / Modrá</option>
+                        <option value="pink-green" data-i18n="color-pink-green">Růžová / Zelená</option>
+                        <option value="purple-yellow" data-i18n="color-purple-yellow">Fialová / Žlutá</option>
                     </select>
                 </div>
                 
                 <div class="control-group">
-                    <label for="slider-boundary-iso">Práh tvaru orbitalu (izoplocha)</label>
+                    <label for="slider-boundary-iso" data-i18n="boundary-threshold">Práh tvaru orbitalu (izoplocha)</label>
                     <input type="range" id="slider-boundary-iso" class="range-slider" min="0.005" max="0.10" step="0.005" value="0.028">
                     <div class="slider-labels">
-                        <span>Větší obal</span>
-                        <span>Menší jádro</span>
+                        <span data-i18n="larger-shell">Větší obal</span>
+                        <span data-i18n="smaller-core">Menší jádro</span>
                     </div>
                 </div>
                 
                 <div class="auto-generate-box" style="display: flex; flex-direction: column; gap: 0.75rem;">
                     <div class="toggle-row">
-                        <span style="font-size: 0.9rem; font-weight: 500;">Mřížka počátku</span>
+                        <span style="font-size: 0.9rem; font-weight: 500;" data-i18n="origin-grid">Mřížka počátku</span>
                         <label class="switch">
                             <input type="checkbox" id="toggle-grid" checked>
                             <span class="slider"></span>
@@ -220,7 +225,7 @@
                     </div>
                     
                     <div class="toggle-row">
-                        <span style="font-size: 0.9rem; font-weight: 500;">Zobrazit osy XYZ</span>
+                        <span style="font-size: 0.9rem; font-weight: 500;" data-i18n="show-axes">Zobrazit osy XYZ</span>
                         <label class="switch">
                             <input type="checkbox" id="toggle-axes" checked>
                             <span class="slider"></span>
@@ -228,7 +233,7 @@
                     </div>
                     
                     <div class="toggle-row">
-                        <span style="font-size: 0.9rem; font-weight: 500;">Auto-rotace scény</span>
+                        <span style="font-size: 0.9rem; font-weight: 500;" data-i18n="auto-rotate">Auto-rotace scény</span>
                         <label class="switch">
                             <input type="checkbox" id="toggle-autorotate" checked>
                             <span class="slider"></span>
@@ -236,7 +241,7 @@
                     </div>
                     
                     <div class="toggle-row">
-                        <span style="font-size: 0.9rem; font-weight: 500;">Teoretický tvar (obal)</span>
+                        <span style="font-size: 0.9rem; font-weight: 500;" data-i18n="theoretical-shape">Teoretický tvar (konturový model)</span>
                         <label class="switch">
                             <input type="checkbox" id="toggle-boundary" checked>
                             <span class="slider"></span>
@@ -244,7 +249,7 @@
                     </div>
                     
                     <div class="toggle-row">
-                        <span style="font-size: 0.9rem; font-weight: 500;">Normalizovaný jas bodů</span>
+                        <span style="font-size: 0.9rem; font-weight: 500;" data-i18n="normalize-brightness">Normalizovaný jas bodů</span>
                         <label class="switch">
                             <input type="checkbox" id="toggle-normalize-color" checked>
                             <span class="slider"></span>
@@ -262,9 +267,9 @@
 
             <!-- Interaktivní návod na spodní hraně plátna -->
             <div class="help-overlay">
-                <span>🖱️ <b>Levé tlačítko:</b> Rotace scény</span>
-                <span>⚙️ <b>Kolečko:</b> Přiblížení (Zoom)</span>
-                <span>✋ <b>Pravé tlačítko:</b> Posun scény</span>
+                <span data-i18n="help-rotate">🖱️ <b>Levé tlačítko:</b> Rotace scény</span>
+                <span data-i18n="help-zoom">⚙️ <b>Kolečko:</b> Přiblížení (Zoom)</span>
+                <span data-i18n="help-pan">✋ <b>Pravé tlačítko:</b> Posun scény</span>
             </div>
 
         </section>

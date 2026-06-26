@@ -700,8 +700,14 @@ input:checked + .slider:before {
         font-size: 0.75rem;
     }
     
-    #btn-theme-toggle {
+    .header-buttons {
         width: 100%;
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .header-buttons button {
+        flex: 1;
     }
     
     .responsive-row-grid {
