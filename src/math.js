@@ -134,26 +134,21 @@ export function probabilityDensity(n, l, m, x, y, z) {
  * - Pmax: maximální hodnota hustoty pravděpodobnosti |psi|^2 v krabici (pro rejection sampling)
  */
 export function getOrbitalParams(n, l, m) {
-    // Empirický odhad velikosti orbitalu
-    // Velikost atomových orbitalů roste jako n^2.
-    const Rmax = 3 * n * n + 4 * n + l * 2;
-    
-    // Provedeme numerický odhad maxima |psi|^2
-    // Vzorkujeme prostor jemnou mřížkou a náhodně, abychom našli maximum.
     let Pmax = 0;
-    const samples = 20000;
+    let Rmax_detected = 2.0; // Minimální rozumný poloměr
+    const samples = 15000;
+    const points = [];
     
-    // Pro s-orbitaly je maximum často v počátku nebo blízko něj
-    // Pro ostatní orbitaly je v počátku nula, takže musíme vzorkovat širší okolí.
+    // Maximální teoretický poloměr vyhledávání
+    const R_search = 3 * n * n + 5 * n + 10;
+    
     for (let i = 0; i < samples; i++) {
-        // Vzorkujeme s větší hustotou blízko středu, kde jsou orbitaly nejkoncentrovanější
-        // Použijeme kvadratické rozložení pro r
         const u1 = Math.random();
         const u2 = Math.random();
         const u3 = Math.random();
         
-        // Transformace pro koncentraci bodů u středu
-        const r = Rmax * Math.pow(u1, 2); 
+        // Střídáme rovnoměrné vzorkování a vzorkování koncentrované u středu (pro zachycení jader i prstenců)
+        const r = R_search * (i % 2 === 0 ? u1 : Math.pow(u1, 2));
         const theta = Math.acos(2 * u2 - 1);
         const phi = 2 * Math.PI * u3;
         
@@ -165,10 +160,24 @@ export function getOrbitalParams(n, l, m) {
         if (P > Pmax) {
             Pmax = P;
         }
+        points.push({ r, P });
     }
     
-    // Bezpečnostní koeficient 1.1x k zabránění oříznutí špiček
-    if (Pmax === 0) Pmax = 1e-5; // Bezpečnostní minimum
+    if (Pmax === 0) Pmax = 1e-5;
+    
+    // Detekujeme aktivní poloměr, kde pravděpodobnost neklesne pod 1e-5 * Pmax
+    const threshold = 1e-5 * Pmax;
+    for (let i = 0; i < samples; i++) {
+        const pt = points[i];
+        if (pt.P >= threshold) {
+            if (pt.r > Rmax_detected) {
+                Rmax_detected = pt.r;
+            }
+        }
+    }
+    
+    // Přidáme 15% bezpečnostní okraj
+    const Rmax = Math.max(5.0, Rmax_detected * 1.15);
     
     return {
         Rmax,

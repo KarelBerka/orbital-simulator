@@ -545,7 +545,7 @@ function getLatexFormula(n, l, m) {
     } else if (n === 2 && l === 1) {
         radialLatex = '\\frac{1}{2\\sqrt{6}} r e^{-r/2}';
     } else if (n === 3 && l === 0) {
-        radialLatex = '\\frac{2}{27\\sqrt{3}} (27 - 18r + 2r^2) e^{-r/3}';
+        radialLatex = '\\frac{2}{81\\sqrt{3}} (27 - 18r + 2r^2) e^{-r/3}';
     } else if (n === 3 && l === 1) {
         radialLatex = '\\frac{4}{27\\sqrt{6}} r (6 - r) e^{-r/3}';
     } else if (n === 3 && l === 2) {
@@ -593,11 +593,15 @@ function generateContourLines(n, l, m, Rmax, Pmax) {
     const colors = [];
     
     const isoVal = parseFloat(sliderBoundaryIso.value);
-    const C = isoVal * Pmax;
+    
+    // Škálování prahu podle n pro kompenzaci prostorového rozptylu pravděpodobnosti u vyšších stavů
+    const scaleFactor = Math.pow(n, 2.0);
+    const C = (isoVal * Pmax) / scaleFactor;
     const thresholdVal = Math.sqrt(C); // vlnová funkce psi se rovná +/- thresholdVal pro hustotu C
     
-    const N_slices = 13; // Počet řezů na osu (liché číslo, aby byl řez přesně v 0)
-    const S = 40;        // Rozlišení mřížky řezu (40x40 buněk)
+    // Dynamický počet řezů a jemnost mřížky podle n (vyšší stavy mají více jemných vnitřních struktur)
+    const N_slices = 11 + n * 4; // n=1: 15, n=2: 19, n=3: 23, n=4: 27, n=5: 31 (vždy liché číslo)
+    const S = 35 + n * 5;        // n=1: 40, n=2: 45, n=3: 50, n=4: 55, n=5: 60
     
     const colorPos = visualizer.colorPos;
     const colorNeg = visualizer.colorNeg;
