@@ -135,6 +135,7 @@ let Pmax = 1;
 let autoGenInterval = null;
 let slicePlane = 'xy';
 let currentLang = 'cs';
+let isModalOpen = false;
 
 // Elementy UI
 const selectN = document.getElementById('select-n');
@@ -152,6 +153,11 @@ const selectSlicePlane = document.getElementById('select-slice-plane');
 const equationBox = document.getElementById('equation-box');
 const btnThemeToggle = document.getElementById('btn-theme-toggle');
 const btnLangToggle = document.getElementById('btn-lang-toggle');
+
+// Modal elementy pro zvětšený 2D řez
+const sliceModal = document.getElementById('slice-modal');
+const modalSliceCanvas = document.getElementById('modal-slice-canvas');
+const modalClose = document.getElementById('modal-close');
 
 // Uzlové statistiky
 const valRadialNodes = document.getElementById('val-radial-nodes');
@@ -306,6 +312,35 @@ function setupPhysicsControls() {
         visualizer.clearPoints();
         updatePointCountUI();
     });
+
+    // Kliknutí na 2D řez otevře zvětšený náhled (modal)
+    sliceCanvas.addEventListener('click', () => {
+        sliceModal.classList.add('open');
+        isModalOpen = true;
+        updateSliceCanvas(); // Vykreslíme i zvětšenou verzi
+    });
+
+    // Zavření modalu tlačítkem X
+    modalClose.addEventListener('click', () => {
+        sliceModal.classList.remove('open');
+        isModalOpen = false;
+    });
+
+    // Zavření modalu kliknutím na pozadí
+    sliceModal.addEventListener('click', (e) => {
+        if (e.target === sliceModal) {
+            sliceModal.classList.remove('open');
+            isModalOpen = false;
+        }
+    });
+
+    // Zavření modalu stisknutím klávesy Escape
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isModalOpen) {
+            sliceModal.classList.remove('open');
+            isModalOpen = false;
+        }
+    });
 }
 
 /**
@@ -439,10 +474,13 @@ function updatePointCountUI() {
 /**
  * Vykreslí 2D řez orbitalem do vedlejšího Canvasu
  */
-function updateSliceCanvas() {
-    const width = sliceCanvas.width;
-    const height = sliceCanvas.height;
-    const ctx = sliceCanvas.getContext('2d');
+/**
+ * Vykreslí 2D řez orbitalem do zadaného Canvasu
+ */
+function drawSlice(canvas) {
+    const width = canvas.width;
+    const height = canvas.height;
+    const ctx = canvas.getContext('2d');
     const imgData = ctx.createImageData(width, height);
     
     const colorPos = visualizer.colorPos;
@@ -495,6 +533,16 @@ function updateSliceCanvas() {
     ctx.moveTo(width / 2, 0);
     ctx.lineTo(width / 2, height);
     ctx.stroke();
+}
+
+/**
+ * Vykreslí 2D řez orbitalem do vedlejšího Canvasu a případně do modálního zvětšení
+ */
+function updateSliceCanvas() {
+    drawSlice(sliceCanvas);
+    if (isModalOpen) {
+        drawSlice(modalSliceCanvas);
+    }
 }
 
 /**
