@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="./src/style.css">
     <link rel="icon" type="image/png" href="./favicon.png">
 </head>
-<body>
+<body class="mode-atomic">
 
     <header>
         <div>
@@ -45,8 +45,14 @@
         <!-- Levý postranní panel s nastavením a teorií -->
         <section id="sidebar">
             
+            <!-- Záložky pro přepínání režimu -->
+            <div class="mode-tabs">
+                <button id="tab-atomic" class="tab-btn active" data-mode="atomic" data-i18n="tab-atomic-label">Atomové orbitaly</button>
+                <button id="tab-molecular" class="tab-btn" data-mode="molecular" data-i18n="tab-molecular-label">Molekulové orbitaly (LCAO)</button>
+            </div>
+            
             <!-- Volba stavu / orbitalu -->
-            <div class="sidebar-section">
+            <div class="sidebar-section atomic-only">
                 <h2 data-i18n="orbital-selection">Výběr Orbitalu</h2>
                 
                 <div class="control-group">
@@ -88,6 +94,106 @@
                         <button class="btn-preset" data-n="3" data-l="2" data-m="2">3d<sub>x²-y²</sub></button>
                         <button class="btn-preset" data-n="4" data-l="3" data-m="0">4f<sub>z³</sub></button>
                         <button class="btn-preset" data-n="4" data-l="3" data-m="-2">4f<sub>xyz</sub></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Volba stavu molekuly (LCAO) -->
+            <div class="sidebar-section molecular-only">
+                <h2 data-i18n="molecular-selection">Kombinace Orbitalů (LCAO)</h2>
+                
+                <!-- Atom A -->
+                <div class="atom-card">
+                    <div class="atom-card-title">
+                        <span>⚛️ Atom A (z = -d/2)</span>
+                    </div>
+                    <div class="control-group">
+                        <div class="quantum-grid">
+                            <div class="quantum-select-wrapper">
+                                <div class="quantum-label" data-i18n="n-label">Hlavní (n)</div>
+                                <select id="select-n-a" class="quantum-value-select">
+                                    <option value="1" selected>1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                            </div>
+                            <div class="quantum-select-wrapper">
+                                <div class="quantum-label" data-i18n="l-label">Vedlejší (l)</div>
+                                <select id="select-l-a" class="quantum-value-select">
+                                    <option value="0" selected>0 (s)</option>
+                                </select>
+                            </div>
+                            <div class="quantum-select-wrapper">
+                                <div class="quantum-label" data-i18n="m-label">Magnetické (m)</div>
+                                <select id="select-m-a" class="quantum-value-select">
+                                    <option value="0" selected>0 (s)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Atom B -->
+                <div class="atom-card">
+                    <div class="atom-card-title">
+                        <span>⚛️ Atom B (z = d/2)</span>
+                    </div>
+                    <div class="control-group">
+                        <div class="quantum-grid">
+                            <div class="quantum-select-wrapper">
+                                <div class="quantum-label" data-i18n="n-label">Hlavní (n)</div>
+                                <select id="select-n-b" class="quantum-value-select">
+                                    <option value="1" selected>1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                            </div>
+                            <div class="quantum-select-wrapper">
+                                <div class="quantum-label" data-i18n="l-label">Vedlejší (l)</div>
+                                <select id="select-l-b" class="quantum-value-select">
+                                    <option value="0" selected>0 (s)</option>
+                                </select>
+                            </div>
+                            <div class="quantum-select-wrapper">
+                                <div class="quantum-label" data-i18n="m-label">Magnetické (m)</div>
+                                <select id="select-m-b" class="quantum-value-select">
+                                    <option value="0" selected>0 (s)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mezianulární parametry -->
+                <div class="control-group">
+                    <label for="slider-distance" data-i18n="nuclei-distance">Vzdálenost jader (d)</label>
+                    <input type="range" id="slider-distance" class="range-slider" min="1.0" max="12.0" step="0.2" value="4.0">
+                    <div class="slider-labels">
+                        <span data-i18n="dist-close">Blízko (1a₀)</span>
+                        <span id="val-distance" style="font-weight: 600; color: var(--accent);">d = 4.0 a₀</span>
+                        <span data-i18n="dist-far">Daleko (12a₀)</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label data-i18n="combination-type">Typ kombinace (fázové překrytí)</label>
+                    <div class="btn-group-toggle">
+                        <button id="btn-bonding" class="btn-toggle active" data-val="bonding" data-i18n="bonding-label">Vazebná (+)</button>
+                        <button id="btn-antibonding" class="btn-toggle" data-val="antibonding" data-i18n="antibonding-label">Antivazebná (-)</button>
+                    </div>
+                </div>
+
+                <!-- Presets for Molecules -->
+                <div class="control-group">
+                    <label data-i18n="quick-presets">Rychlé předvolby</label>
+                    <div class="preset-grid">
+                        <button class="btn-mol-preset active" data-preset="sigma_1s">σ₁ₛ (vazebný)</button>
+                        <button class="btn-mol-preset" data-preset="sigma_star_1s">σ*₁ₛ (antivazebný)</button>
+                        <button class="btn-mol-preset" data-preset="sigma_2p">σ₂ₚ_z</button>
+                        <button class="btn-mol-preset" data-preset="sigma_star_2p">σ*₂ₚ_z</button>
+                        <button class="btn-mol-preset" data-preset="pi_2p">π₂ₚ_x</button>
+                        <button class="btn-mol-preset" data-preset="pi_star_2p">π*₂ₚ_x</button>
+                        <button class="btn-mol-preset" data-preset="sp_hybrid">sp (A) - s (B)</button>
                     </div>
                 </div>
             </div>
@@ -172,7 +278,8 @@
             <div class="sidebar-section">
                 <h2 data-i18n="math-description">Matematický popis</h2>
                 <div class="theory-text">
-                    <p data-i18n="theory-para">Vlnová funkce $\psi_{n,l,m}$ popisuje stacionární stav elektronu. Výskyt elektronu (hustota pravděpodobnosti) je dán kvadrátem vlnové funkce $|\psi|^2$.</p>
+                    <p class="atomic-only" data-i18n="theory-para">Vlnová funkce $\psi_{n,l,m}$ popisuje stacionární stav elektronu. Výskyt elektronu (hustota pravděpodobnosti) je dán kvadrátem vlnové funkce $|\psi|^2$.</p>
+                    <p class="molecular-only" data-i18n="theory-para-mol">Vlnová funkce molekulového orbitalu $\psi_{MO}$ vzniká lineární kombinací atomových orbitalů $\psi_A$ a $\psi_B$. Pravděpodobnost výskytu elektronu je $|\psi_{MO}|^2$.</p>
                 </div>
                 <div id="equation-box" class="math-box">
                     <!-- Zde bude rovnice vložena pomocí JS -->
@@ -180,10 +287,18 @@
                 </div>
                 <div class="theory-text" style="margin-top: 1rem;">
                     <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; text-transform: uppercase;" data-i18n="nodal-surfaces-title">Uzlové plochy (místa s nulovou pravděpodobností)</label>
-                    <ul class="node-list">
+                    
+                    <ul class="node-list atomic-only">
                         <li><span data-i18n="radial-nodes-label">Radiální uzlové plochy ($n-l-1$):</span> <b id="val-radial-nodes">0</b></li>
                         <li><span data-i18n="angular-nodes-label">Úhlové uzlové plochy ($l$):</span> <b id="val-angular-nodes">0</b></li>
                         <li><span data-i18n="total-nodes-label">Celkem uzlových ploch ($n-1$):</span> <b id="val-total-nodes">0</b></li>
+                    </ul>
+
+                    <ul class="node-list molecular-only">
+                        <li><span data-i18n="mol-type-label">Typ orbitalu:</span> <b id="val-mol-type" style="color: var(--accent);">Vazebný (bonding)</b></li>
+                        <li><span data-i18n="mol-nodes-a-label">Uzlové plochy atomu A ($n-1$):</span> <b id="val-mol-nodes-a">0</b></li>
+                        <li><span data-i18n="mol-nodes-b-label">Uzlové plochy atomu B ($n-1$):</span> <b id="val-mol-nodes-b">0</b></li>
+                        <li><span data-i18n="mol-nodal-plane-label">Uzlová rovina mezi jádry (z = 0):</span> <b id="val-mol-nodal-plane">Ne (No)</b></li>
                     </ul>
                 </div>
             </div>

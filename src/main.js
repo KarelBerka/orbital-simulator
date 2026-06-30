@@ -1,4 +1,11 @@
-import { getOrbitalParams, waveFunction, probabilityDensity } from './math.js';
+import { 
+    getOrbitalParams, 
+    waveFunction, 
+    probabilityDensity, 
+    molecularWaveFunction, 
+    molecularProbabilityDensity, 
+    getMolecularOrbitalParams 
+} from './math.js';
 import { OrbitalVisualizer } from './visualizer.js';
 
 // Konstanty s názvy orbitalů pro zobrazení
@@ -71,7 +78,22 @@ const TRANSLATIONS = {
         'help-zoom': '⚙️ <b>Kolečko:</b> Přiblížení (Zoom)',
         'help-pan': '✋ <b>Pravé tlačítko:</b> Posun scény',
         'github-repo': 'GitHub Repozitář',
-        'authors-list': 'Autoři: Karel Berka (UPOL) & Lukáš Peterka (VŠCHT)'
+        'authors-list': 'Autoři: Karel Berka (UPOL) & Lukáš Peterka (VŠCHT)',
+        // Nové molekulární klíče
+        'tab-atomic-label': 'Atomové orbitaly',
+        'tab-molecular-label': 'Molekulové orbitaly (LCAO)',
+        'molecular-selection': 'Kombinace Orbitalů (LCAO)',
+        'nuclei-distance': 'Vzdálenost jader (d)',
+        'dist-close': 'Blízko (1a₀)',
+        'dist-far': 'Daleko (12a₀)',
+        'combination-type': 'Typ kombinace (fázové překrytí)',
+        'bonding-label': 'Vazebná (+)',
+        'antibonding-label': 'Antivazebná (-)',
+        'theory-para-mol': 'Vlnová funkce molekulového orbitalu $\\psi_{MO}$ vzniká lineární kombinací atomových orbitalů $\\psi_A$ a $\\psi_B$. Pravděpodobnost výskytu elektronu je $|\\psi_{MO}|^2$.',
+        'mol-type-label': 'Typ orbitalu:',
+        'mol-nodes-a-label': 'Uzlové plochy atomu A ($n-1$):',
+        'mol-nodes-b-label': 'Uzlové plochy atomu B ($n-1$):',
+        'mol-nodal-plane-label': 'Uzlová rovina mezi jádry (z = 0):'
     },
     en: {
         'meta-title': '3D Atomic Orbitals Simulator',
@@ -125,12 +147,28 @@ const TRANSLATIONS = {
         'help-zoom': '⚙️ <b>Scroll wheel:</b> Zoom',
         'help-pan': '✋ <b>Right button:</b> Pan scene',
         'github-repo': 'GitHub Repository',
-        'authors-list': 'Authors: Karel Berka (UPOL) & Lukáš Peterka (VŠCHT)'
+        'authors-list': 'Authors: Karel Berka (UPOL) & Lukáš Peterka (VŠCHT)',
+        // New molecular keys
+        'tab-atomic-label': 'Atomic Orbitals',
+        'tab-molecular-label': 'Molecular Orbitals (LCAO)',
+        'molecular-selection': 'Orbital Combination (LCAO)',
+        'nuclei-distance': 'Inter-nuclear Distance (d)',
+        'dist-close': 'Close (1a₀)',
+        'dist-far': 'Far (12a₀)',
+        'combination-type': 'Combination Type (phase overlap)',
+        'bonding-label': 'Bonding (+)',
+        'antibonding-label': 'Antibonding (-)',
+        'theory-para-mol': 'The wave function of the molecular orbital $\\psi_{MO}$ is formed by a linear combination of atomic orbitals $\\psi_A$ and $\\psi_B$. The probability of electron occurrence is given by $|\\psi_{MO}|^2$.',
+        'mol-type-label': 'Orbital type:',
+        'mol-nodes-a-label': 'Nodal surfaces of atom A ($n-1$):',
+        'mol-nodes-b-label': 'Nodal surfaces of atom B ($n-1$):',
+        'mol-nodal-plane-label': 'Nodal plane between nuclei (z = 0):'
     }
 };
 
 // Globální stav aplikace
 let visualizer = null;
+let currentMode = 'atomic'; // 'atomic' nebo 'molecular'
 let currentN = 1;
 let currentL = 0;
 let currentM = 0;
@@ -141,7 +179,13 @@ let slicePlane = 'xy';
 let currentLang = 'cs';
 let isModalOpen = false;
 
-// Elementy UI
+// Globální stav pro molekulový režim
+let molN_A = 1, molL_A = 0, molM_A = 0;
+let molN_B = 1, molL_B = 0, molM_B = 0;
+let molDistance = 4.0;
+let molCombination = 'bonding'; // 'bonding' nebo 'antibonding'
+
+// Elementy UI (původní atomové)
 const selectN = document.getElementById('select-n');
 const selectL = document.getElementById('select-l');
 const selectM = document.getElementById('select-m');
@@ -158,12 +202,32 @@ const equationBox = document.getElementById('equation-box');
 const btnThemeToggle = document.getElementById('btn-theme-toggle');
 const btnLangToggle = document.getElementById('btn-lang-toggle');
 
+// Nové elementy UI pro záložky a molekuly
+const tabAtomic = document.getElementById('tab-atomic');
+const tabMolecular = document.getElementById('tab-molecular');
+const selectNA = document.getElementById('select-n-a');
+const selectLA = document.getElementById('select-l-a');
+const selectMA = document.getElementById('select-m-a');
+const selectNB = document.getElementById('select-n-b');
+const selectLB = document.getElementById('select-l-b');
+const selectMB = document.getElementById('select-m-b');
+const sliderDistance = document.getElementById('slider-distance');
+const valDistance = document.getElementById('val-distance');
+const btnBonding = document.getElementById('btn-bonding');
+const btnAntibonding = document.getElementById('btn-antibonding');
+
+// Molekulární uzlové statistiky
+const valMolType = document.getElementById('val-mol-type');
+const valMolNodesA = document.getElementById('val-mol-nodes-a');
+const valMolNodesB = document.getElementById('val-mol-nodes-b');
+const valMolNodalPlane = document.getElementById('val-mol-nodal-plane');
+
 // Modal elementy pro zvětšený 2D řez
 const sliceModal = document.getElementById('slice-modal');
 const modalSliceCanvas = document.getElementById('modal-slice-canvas');
 const modalClose = document.getElementById('modal-close');
 
-// Uzlové statistiky
+// Uzlové statistiky (původní atomové)
 const valRadialNodes = document.getElementById('val-radial-nodes');
 const valAngularNodes = document.getElementById('val-angular-nodes');
 const valTotalNodes = document.getElementById('val-total-nodes');
@@ -202,6 +266,36 @@ window.addEventListener('DOMContentLoaded', () => {
     // Prověřit, zda je spuštěn automatický záchyt ikony (favicony)
     checkAutoCapture();
 });
+
+
+// Pomocné funkce pro vlnové funkce a pravděpodobnosti v závislosti na režimu (Atomový vs LCAO)
+function getActiveWaveFunction(x, y, z) {
+    if (currentMode === 'atomic') {
+        return waveFunction(currentN, currentL, currentM, x, y, z);
+    } else {
+        const c_A = 1.0;
+        const c_B = molCombination === 'bonding' ? 1.0 : -1.0;
+        return molecularWaveFunction(
+            molN_A, molL_A, molM_A,
+            molN_B, molL_B, molM_B,
+            molDistance, c_A, c_B, x, y, z
+        );
+    }
+}
+
+function getActiveProbabilityDensity(x, y, z) {
+    if (currentMode === 'atomic') {
+        return probabilityDensity(currentN, currentL, currentM, x, y, z);
+    } else {
+        const c_A = 1.0;
+        const c_B = molCombination === 'bonding' ? 1.0 : -1.0;
+        return molecularProbabilityDensity(
+            molN_A, molL_A, molM_A,
+            molN_B, molL_B, molM_B,
+            molDistance, c_A, c_B, x, y, z
+        );
+    }
+}
 
 function setupThreeControls() {
     sliderPointSize.addEventListener('input', (e) => {
@@ -261,6 +355,11 @@ function setupThreeControls() {
 }
 
 function setupPhysicsControls() {
+    // Přepínání záložek režimů (Atomový / Molekulový)
+    tabAtomic.addEventListener('click', () => setMode('atomic'));
+    tabMolecular.addEventListener('click', () => setMode('molecular'));
+
+    // --- Původní atomové ovládání ---
     // Změna kvantového čísla N
     selectN.addEventListener('change', () => {
         const n = parseInt(selectN.value);
@@ -304,6 +403,72 @@ function setupPhysicsControls() {
             repopulateMSelect(l, m);
             
             updateOrbitalState(n, l, m);
+        });
+    });
+
+    // --- Nové molekulové ovládání ---
+    // Nastavení Atomu A
+    selectNA.addEventListener('change', () => {
+        const n = parseInt(selectNA.value);
+        repopulateLSelectGeneric(selectLA, n);
+        const l = parseInt(selectLA.value);
+        repopulateMSelectGeneric(selectMA, l);
+        updateMolecularOrbitalState();
+    });
+    selectLA.addEventListener('change', () => {
+        const l = parseInt(selectLA.value);
+        repopulateMSelectGeneric(selectMA, l);
+        updateMolecularOrbitalState();
+    });
+    selectMA.addEventListener('change', () => {
+        updateMolecularOrbitalState();
+    });
+
+    // Nastavení Atomu B
+    selectNB.addEventListener('change', () => {
+        const n = parseInt(selectNB.value);
+        repopulateLSelectGeneric(selectLB, n);
+        const l = parseInt(selectLB.value);
+        repopulateMSelectGeneric(selectMB, l);
+        updateMolecularOrbitalState();
+    });
+    selectLB.addEventListener('change', () => {
+        const l = parseInt(selectLB.value);
+        repopulateMSelectGeneric(selectMB, l);
+        updateMolecularOrbitalState();
+    });
+    selectMB.addEventListener('change', () => {
+        updateMolecularOrbitalState();
+    });
+
+    // Změna vzdálenosti jader
+    sliderDistance.addEventListener('input', (e) => {
+        molDistance = parseFloat(e.target.value);
+        valDistance.textContent = `d = ${molDistance.toFixed(1)} a₀`;
+        updateMolecularOrbitalState();
+    });
+
+    // Typ kombinace (vazebný / antivazebný)
+    btnBonding.addEventListener('click', () => {
+        btnBonding.classList.add('active');
+        btnAntibonding.classList.remove('active');
+        molCombination = 'bonding';
+        updateMolecularOrbitalState();
+    });
+    btnAntibonding.addEventListener('click', () => {
+        btnAntibonding.classList.add('active');
+        btnBonding.classList.remove('active');
+        molCombination = 'antibonding';
+        updateMolecularOrbitalState();
+    });
+
+    // Rychlé předvolby pro molekuly
+    const molPresetButtons = document.querySelectorAll('.btn-mol-preset');
+    molPresetButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            molPresetButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyMolecularPreset(btn.dataset.preset);
         });
     });
 
@@ -355,34 +520,31 @@ function setupPhysicsControls() {
 }
 
 /**
- * Dynamicky naplní select pro L podle zvoleného N (omezeno na s, p, d, f)
+ * Generické funkce pro dynamické plnění selectů L a M
  */
-function repopulateLSelect(n) {
-    const prevVal = selectL.value;
-    selectL.innerHTML = '';
+function repopulateLSelectGeneric(selectL_el, n) {
+    const prevVal = selectL_el.value;
+    selectL_el.innerHTML = '';
     
     const maxL = Math.min(n - 1, 3);
-    
     const labels = ['0 (s)', '1 (p)', '2 (d)', '3 (f)'];
+    
     for (let l = 0; l <= maxL; l++) {
         const opt = document.createElement('option');
         opt.value = l;
         opt.textContent = labels[l];
-        selectL.appendChild(opt);
+        selectL_el.appendChild(opt);
     }
     
     if (parseInt(prevVal) <= maxL) {
-        selectL.value = prevVal;
+        selectL_el.value = prevVal;
     } else {
-        selectL.value = 0;
+        selectL_el.value = 0;
     }
 }
 
-/**
- * Dynamicky naplní select pro M podle zvoleného L
- */
-function repopulateMSelect(l, preserveVal = 0) {
-    selectM.innerHTML = '';
+function repopulateMSelectGeneric(selectM_el, l, preserveVal = 0) {
+    selectM_el.innerHTML = '';
     
     for (let m = -l; m <= l; m++) {
         const opt = document.createElement('option');
@@ -390,10 +552,179 @@ function repopulateMSelect(l, preserveVal = 0) {
         
         const name = ORBITAL_NAMES[l]?.[m] || m;
         opt.textContent = `${m} (${name})`;
-        selectM.appendChild(opt);
+        selectM_el.appendChild(opt);
     }
     
-    selectM.value = preserveVal;
+    selectM_el.value = preserveVal;
+}
+
+/**
+ * Dynamicky naplní select pro L podle zvoleného N (omezeno na s, p, d, f)
+ */
+function repopulateLSelect(n) {
+    repopulateLSelectGeneric(selectL, n);
+}
+
+/**
+ * Dynamicky naplní select pro M podle zvoleného L
+ */
+function repopulateMSelect(l, preserveVal = 0) {
+    repopulateMSelectGeneric(selectM, l, preserveVal);
+}
+
+/**
+ * Přepne mezi atomovým a molekulovým režimem
+ */
+function setMode(mode) {
+    currentMode = mode;
+    
+    if (mode === 'atomic') {
+        tabAtomic.classList.add('active');
+        tabMolecular.classList.remove('active');
+        document.body.classList.remove('mode-molecular');
+        document.body.classList.add('mode-atomic');
+        
+        // Obnovit původní stav atomového orbitalu
+        updateOrbitalState(currentN, currentL, currentM);
+    } else {
+        tabMolecular.classList.add('active');
+        tabAtomic.classList.remove('active');
+        document.body.classList.remove('mode-atomic');
+        document.body.classList.add('mode-molecular');
+        
+        // Nastavit stav molekulového orbitalu
+        updateMolecularOrbitalState();
+    }
+}
+
+/**
+ * Aktualizuje stav molekuly a resetuje simulované body
+ */
+function updateMolecularOrbitalState() {
+    molN_A = parseInt(selectNA.value);
+    molL_A = parseInt(selectLA.value);
+    molM_A = parseInt(selectMA.value);
+    
+    molN_B = parseInt(selectNB.value);
+    molL_B = parseInt(selectLB.value);
+    molM_B = parseInt(selectMB.value);
+    
+    const c_A = 1.0;
+    const c_B = molCombination === 'bonding' ? 1.0 : -1.0;
+    
+    // Získání fyzikálních parametrů LCAO molekuly
+    const params = getMolecularOrbitalParams(
+        molN_A, molL_A, molM_A,
+        molN_B, molL_B, molM_B,
+        molDistance, c_A, c_B
+    );
+    Rmax = params.Rmax;
+    Pmax = params.Pmax;
+    
+    // Generování a vykreslení teoretického tvaru (3D vrstevnice)
+    updateBoundaryContours();
+    visualizer.toggleBoundaryShell(toggleBoundary.checked);
+    
+    // Smazání bodů
+    visualizer.clearPoints();
+    updatePointCountUI();
+    
+    // Aktualizace 2D řezu
+    updateSliceCanvas();
+    
+    // Aktualizace teorií a rovnic
+    updateTheoryPanel();
+}
+
+/**
+ * Použije přednastavenou konfiguraci pro molekulu (preset)
+ */
+function applyMolecularPreset(preset) {
+    let nA = 1, lA = 0, mA = 0;
+    let nB = 1, lB = 0, mB = 0;
+    let d = 4.0;
+    let comb = 'bonding';
+    
+    switch (preset) {
+        case 'sigma_1s':
+            nA = 1; lA = 0; mA = 0;
+            nB = 1; lB = 0; mB = 0;
+            d = 3.5;
+            comb = 'bonding';
+            break;
+        case 'sigma_star_1s':
+            nA = 1; lA = 0; mA = 0;
+            nB = 1; lB = 0; mB = 0;
+            d = 3.5;
+            comb = 'antibonding';
+            break;
+        case 'sigma_2p':
+            nA = 2; lA = 1; mA = 0;
+            nB = 2; lB = 1; mB = 0;
+            d = 5.0;
+            comb = 'antibonding'; // Pro p_z je vazebná kombinace s opačnými fázemi
+            break;
+        case 'sigma_star_2p':
+            nA = 2; lA = 1; mA = 0;
+            nB = 2; lB = 1; mB = 0;
+            d = 5.0;
+            comb = 'bonding';
+            break;
+        case 'pi_2p':
+            nA = 2; lA = 1; mA = 1;
+            nB = 2; lB = 1; mB = 1;
+            d = 4.5;
+            comb = 'bonding';
+            break;
+        case 'pi_star_2p':
+            nA = 2; lA = 1; mA = 1;
+            nB = 2; lB = 1; mB = 1;
+            d = 4.5;
+            comb = 'antibonding';
+            break;
+        case 'sp_hybrid':
+            nA = 2; lA = 1; mA = 0;
+            nB = 1; lB = 0; mB = 0;
+            d = 4.0;
+            comb = 'bonding';
+            break;
+    }
+    
+    selectNA.value = nA;
+    repopulateLSelectGeneric(selectLA, nA);
+    selectLA.value = lA;
+    repopulateMSelectGeneric(selectMA, lA, mA);
+    
+    selectNB.value = nB;
+    repopulateLSelectGeneric(selectLB, nB);
+    selectLB.value = lB;
+    repopulateMSelectGeneric(selectMB, lB, mB);
+    
+    sliderDistance.value = d;
+    valDistance.textContent = `d = ${d.toFixed(1)} a₀`;
+    molDistance = d;
+    
+    molCombination = comb;
+    if (comb === 'bonding') {
+        btnBonding.classList.add('active');
+        btnAntibonding.classList.remove('active');
+    } else {
+        btnAntibonding.classList.add('active');
+        btnBonding.classList.remove('active');
+    }
+    
+    updateMolecularOrbitalState();
+}
+
+/**
+ * Vygeneruje LaTeX zápis molekulární vlnové funkce
+ */
+function getMolecularLatexFormula() {
+    const labelA = ORBITAL_NAMES[molL_A]?.[molM_A] || molM_A;
+    const labelB = ORBITAL_NAMES[molL_B]?.[molM_B] || molM_B;
+    const sign = molCombination === 'bonding' ? '+' : '-';
+    
+    return `$$\\psi_{\\text{MO}} = \\psi_{${molN_A}, \\text{${labelA}}}(\\mathbf{r}_A) ${sign} \\psi_{${molN_B}, \\text{${labelB}}}(\\mathbf{r}_B)$$`;
 }
 
 /**
@@ -467,7 +798,7 @@ function sampleElectronPosition(n, l, m, Rmax, Pmax) {
         const y = (Math.random() * 2 - 1) * Rmax;
         const z = (Math.random() * 2 - 1) * Rmax;
         
-        const psi = waveFunction(n, l, m, x, y, z);
+        const psi = getActiveWaveFunction(x, y, z);
         const P = psi * psi;
         
         const P_rand = Math.random() * Pmax;
@@ -483,9 +814,6 @@ function updatePointCountUI() {
     statCount.textContent = visualizer.pointCount.toLocaleString(currentLang === 'cs' ? 'cs-CZ' : 'en-US');
 }
 
-/**
- * Vykreslí 2D řez orbitalem do vedlejšího Canvasu
- */
 /**
  * Vykreslí 2D řez orbitalem do zadaného Canvasu
  */
@@ -513,7 +841,7 @@ function drawSlice(canvas) {
                 x = 0; y = fx; z = fy;
             }
             
-            const psi = waveFunction(currentN, currentL, currentM, x, y, z);
+            const psi = getActiveWaveFunction(x, y, z);
             const P = psi * psi;
             
             const normP = Math.min(1.0, P / Pmax);
@@ -576,16 +904,43 @@ function startAutoGenLoop() {
  * Vygeneruje LaTeX kód rovnice a aktualizuje uzlové statistiky
  */
 function updateTheoryPanel() {
-    const radialNodes = currentN - currentL - 1;
-    const angularNodes = currentL;
-    const totalNodes = currentN - 1;
-    
-    valRadialNodes.textContent = radialNodes;
-    valAngularNodes.textContent = angularNodes;
-    valTotalNodes.textContent = totalNodes;
-    
-    const latex = getLatexFormula(currentN, currentL, currentM);
-    equationBox.innerHTML = latex;
+    if (currentMode === 'atomic') {
+        const radialNodes = currentN - currentL - 1;
+        const angularNodes = currentL;
+        const totalNodes = currentN - 1;
+        
+        valRadialNodes.textContent = radialNodes;
+        valAngularNodes.textContent = angularNodes;
+        valTotalNodes.textContent = totalNodes;
+        
+        const latex = getLatexFormula(currentN, currentL, currentM);
+        equationBox.innerHTML = latex;
+    } else {
+        // Molekulový režim
+        const nodesA = molN_A - 1;
+        const nodesB = molN_B - 1;
+        
+        valMolNodesA.textContent = nodesA;
+        valMolNodesB.textContent = nodesB;
+        
+        const isCs = currentLang === 'cs';
+        let molTypeText = '';
+        let nodalPlaneText = '';
+        
+        if (molCombination === 'bonding') {
+            molTypeText = isCs ? 'Vazebný (bonding)' : 'Bonding';
+            nodalPlaneText = isCs ? 'Ne (No)' : 'No';
+        } else {
+            molTypeText = isCs ? 'Antivazebný (antibonding)' : 'Antibonding';
+            nodalPlaneText = isCs ? 'Ano (z = 0) (Yes)' : 'Yes (z = 0)';
+        }
+        
+        valMolType.textContent = molTypeText;
+        valMolNodalPlane.textContent = nodalPlaneText;
+        
+        const latex = getMolecularLatexFormula();
+        equationBox.innerHTML = latex;
+    }
     
     if (window.MathJax && window.MathJax.typesetPromise) {
         window.MathJax.typesetPromise([equationBox]).catch(err => console.error(err));
@@ -654,14 +1009,15 @@ function generateContourLines(n, l, m, Rmax, Pmax) {
     
     const isoVal = parseFloat(sliderBoundaryIso.value);
     
-    // Škálování prahu podle n pro kompenzaci prostorového rozptylu pravděpodobnosti u vyšších stavů
-    const scaleFactor = Math.pow(n, 2.0);
+    // Škálování prahu podle maxN pro kompenzaci prostorového rozptylu pravděpodobnosti u vyšších stavů
+    const maxN = currentMode === 'atomic' ? n : Math.max(molN_A, molN_B);
+    const scaleFactor = Math.pow(maxN, 2.0);
     const C = (isoVal * Pmax) / scaleFactor;
     const thresholdVal = Math.sqrt(C); // vlnová funkce psi se rovná +/- thresholdVal pro hustotu C
     
-    // Dynamický počet řezů a jemnost mřížky podle n (vyšší stavy mají více jemných vnitřních struktur)
-    const N_slices = 11 + n * 4; // n=1: 15, n=2: 19, n=3: 23, n=4: 27, n=5: 31 (vždy liché číslo)
-    const S = 35 + n * 5;        // n=1: 40, n=2: 45, n=3: 50, n=4: 55, n=5: 60
+    // Dynamický počet řezů a jemnost mřížky podle maxN a režimu
+    const N_slices = currentMode === 'atomic' ? (11 + maxN * 4) : (17 + maxN * 5);
+    const S = currentMode === 'atomic' ? (35 + maxN * 5) : (50 + maxN * 8);
     
     const colorPos = visualizer.colorPos;
     const colorNeg = visualizer.colorNeg;
@@ -707,7 +1063,7 @@ function generateContourLines(n, l, m, Rmax, Pmax) {
                             x = sliceVal; y = v; z = u;
                         }
                         
-                        const psi = waveFunction(n, l, m, x, y, z);
+                        const psi = getActiveWaveFunction(x, y, z);
                         const idx = i + j * S;
                         gridValues[idx] = phaseSign * psi; // Hledáme konturu kde phaseSign * psi = threshold
                         gridPoints[idx] = { x: v, y: u };
@@ -824,7 +1180,7 @@ function recolorPoints() {
         const y = positions[idx + 1];
         const z = positions[idx + 2];
         
-        const psi = waveFunction(currentN, currentL, currentM, x, y, z);
+        const psi = getActiveWaveFunction(x, y, z);
         const color = psi >= 0 ? colorPos : colorNeg;
         
         let scale = 1.0;
@@ -881,6 +1237,14 @@ function setLanguage(lang) {
     repopulateLSelect(currentN);
     selectL.value = currentL;
     repopulateMSelect(currentL, currentM);
+    
+    repopulateLSelectGeneric(selectLA, molN_A);
+    selectLA.value = molL_A;
+    repopulateMSelectGeneric(selectMA, molL_A, molM_A);
+    
+    repopulateLSelectGeneric(selectLB, molN_B);
+    selectLB.value = molL_B;
+    repopulateMSelectGeneric(selectMB, molL_B, molM_B);
     
     // Aktualizovat panel s teorií a rovnicí
     updateTheoryPanel();

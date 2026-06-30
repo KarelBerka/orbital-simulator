@@ -117,10 +117,10 @@ export class OrbitalVisualizer {
 
         // Inicializace 3D obrysového/konturového modelu (wireframe contour lines)
         this.contourGeometry = new THREE.BufferGeometry();
-        this.maxContourVertices = 120000; // maximální počet vrcholů pro čáry
+        this.maxContourVertices = 500000; // maximální počet vrcholů pro čáry
         this.contourPositions = new Float32Array(this.maxContourVertices * 3);
         this.contourColors = new Float32Array(this.maxContourVertices * 3);
-        
+
         this.contourGeometry.setAttribute('position', new THREE.BufferAttribute(this.contourPositions, 3));
         this.contourGeometry.setAttribute('color', new THREE.BufferAttribute(this.contourColors, 3));
         this.contourGeometry.setDrawRange(0, 0);

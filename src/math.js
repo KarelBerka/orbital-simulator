@@ -184,3 +184,96 @@ export function getOrbitalParams(n, l, m) {
         Pmax: Pmax * 1.1
     };
 }
+
+/**
+ * Celková vlnová funkce pro molekulový orbital v aproximaci LCAO (Linear Combination of Atomic Orbitals).
+ * Dva atomové orbitaly A a B jsou umístěny na ose Z ve vzdálenostech -d/2 a d/2.
+ */
+export function molecularWaveFunction(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, x, y, z) {
+    // Atom A na pozici (0, 0, -d/2)
+    const psi_A = waveFunction(n_A, l_A, m_A, x, y, z + d / 2);
+    // Atom B na pozici (0, 0, d/2)
+    const psi_B = waveFunction(n_B, l_B, m_B, x, y, z - d / 2);
+    return c_A * psi_A + c_B * psi_B;
+}
+
+/**
+ * Hustota pravděpodobnosti molekulového orbitalu |psi_MO|^2.
+ */
+export function molecularProbabilityDensity(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, x, y, z) {
+    const psi = molecularWaveFunction(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, x, y, z);
+    return psi * psi;
+}
+
+/**
+ * Odhadne parametry molekulového orbitalu (Rmax a Pmax) pro potřeby Monte Carlo vzorkování.
+ */
+export function getMolecularOrbitalParams(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B) {
+    let Pmax = 0;
+    let Rmax_detected = 2.0;
+    const samples = 20000;
+    const points = [];
+    
+    // Získáme odhady pro jednotlivé atomové orbitaly
+    const paramsA = getOrbitalParams(n_A, l_A, m_A);
+    const paramsB = getOrbitalParams(n_B, l_B, m_B);
+    
+    // Základní poloměr vyhledávání musí pokrýt oba atomy a jejich rozsah
+    const baseRmax = Math.max(paramsA.Rmax, paramsB.Rmax) + d / 2;
+    
+    for (let i = 0; i < samples; i++) {
+        const u1 = Math.random();
+        const u2 = Math.random();
+        const u3 = Math.random();
+        
+        // Vzorkujeme body soustředěné kolem jádra A, jádra B a středu mezi nimi
+        let centerZ = 0;
+        const roll = Math.random();
+        if (roll < 0.45) {
+            centerZ = -d / 2; // Kolem atomu A
+        } else if (roll < 0.90) {
+            centerZ = d / 2;  // Kolem atomu B
+        } else {
+            centerZ = 0;      // V mezijaderném prostoru
+        }
+        
+        const r = baseRmax * (i % 2 === 0 ? u1 : Math.pow(u1, 2));
+        const theta = Math.acos(2 * u2 - 1);
+        const phi = 2 * Math.PI * u3;
+        
+        const x = r * Math.sin(theta) * Math.cos(phi);
+        const y = r * Math.sin(theta) * Math.sin(phi);
+        const z = r * Math.cos(theta) + centerZ;
+        
+        const P = molecularProbabilityDensity(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, x, y, z);
+        if (P > Pmax) {
+            Pmax = P;
+        }
+        
+        // Celková vzdálenost od těžiště (počátku)
+        const distFromOrigin = Math.sqrt(x*x + y*y + z*z);
+        points.push({ r: distFromOrigin, P });
+    }
+    
+    if (Pmax === 0) Pmax = 1e-5;
+    
+    // Detekujeme aktivní poloměr od počátku
+    const threshold = 1e-5 * Pmax;
+    for (let i = 0; i < samples; i++) {
+        const pt = points[i];
+        if (pt.P >= threshold) {
+            if (pt.r > Rmax_detected) {
+                Rmax_detected = pt.r;
+            }
+        }
+    }
+    
+    // Bezpečnostní rezerva
+    const Rmax = Math.max(paramsA.Rmax + d/2, Rmax_detected * 1.15);
+    
+    return {
+        Rmax,
+        Pmax: Pmax * 1.1
+    };
+}
+
