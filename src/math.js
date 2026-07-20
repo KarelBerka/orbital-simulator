@@ -131,10 +131,12 @@ export function probabilityDensity(n, l, m, x, y, z) {
 /**
  * Odhadne parametry orbitalu:
  * - Rmax: velikost ohraničující krabice [-Rmax, Rmax]^3
- * - Pmax: maximální hodnota hustoty pravděpodobnosti |psi|^2 v krabici (pro rejection sampling)
+ * - Pmax: maximální hodnota hustoty pravděpodobnosti |psi|^2 v krabici
+ * - Pmax_radial: maximální hodnota radiálně vážené hustoty r^2 * |psi|^2 pro sférické vzorkování
  */
 export function getOrbitalParams(n, l, m) {
     let Pmax = 0;
+    let Pmax_radial = 0;
     let Rmax_detected = 2.0; // Minimální rozumný poloměr
     const samples = 15000;
     const points = [];
@@ -160,10 +162,17 @@ export function getOrbitalParams(n, l, m) {
         if (P > Pmax) {
             Pmax = P;
         }
+        
+        const P_radial = r * r * P;
+        if (P_radial > Pmax_radial) {
+            Pmax_radial = P_radial;
+        }
+        
         points.push({ r, P });
     }
     
     if (Pmax === 0) Pmax = 1e-5;
+    if (Pmax_radial === 0) Pmax_radial = 1e-5;
     
     // Detekujeme aktivní poloměr, kde pravděpodobnost neklesne pod 1e-5 * Pmax
     const threshold = 1e-5 * Pmax;
@@ -181,7 +190,8 @@ export function getOrbitalParams(n, l, m) {
     
     return {
         Rmax,
-        Pmax: Pmax * 1.1
+        Pmax: Pmax * 1.1,
+        Pmax_radial: Pmax_radial * 1.1
     };
 }
 
@@ -210,6 +220,7 @@ export function molecularProbabilityDensity(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A
  */
 export function getMolecularOrbitalParams(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B) {
     let Pmax = 0;
+    let Pmax_radial = 0;
     let Rmax_detected = 2.0;
     const samples = 20000;
     const points = [];
@@ -252,10 +263,16 @@ export function getMolecularOrbitalParams(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, 
         
         // Celková vzdálenost od těžiště (počátku)
         const distFromOrigin = Math.sqrt(x*x + y*y + z*z);
+        const P_radial = distFromOrigin * distFromOrigin * P;
+        if (P_radial > Pmax_radial) {
+            Pmax_radial = P_radial;
+        }
+        
         points.push({ r: distFromOrigin, P });
     }
     
     if (Pmax === 0) Pmax = 1e-5;
+    if (Pmax_radial === 0) Pmax_radial = 1e-5;
     
     // Detekujeme aktivní poloměr od počátku
     const threshold = 1e-5 * Pmax;
@@ -273,7 +290,8 @@ export function getMolecularOrbitalParams(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, 
     
     return {
         Rmax,
-        Pmax: Pmax * 1.1
+        Pmax: Pmax * 1.1,
+        Pmax_radial: Pmax_radial * 1.1
     };
 }
 

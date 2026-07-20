@@ -174,6 +174,7 @@ let currentL = 0;
 let currentM = 0;
 let Rmax = 7;
 let Pmax = 1;
+let Pmax_radial = 1;
 let autoGenInterval = null;
 let slicePlane = 'xy';
 let currentLang = 'cs';
@@ -620,6 +621,7 @@ function updateMolecularOrbitalState() {
     );
     Rmax = params.Rmax;
     Pmax = params.Pmax;
+    Pmax_radial = params.Pmax_radial;
     
     // Generování a vykreslení teoretického tvaru (3D vrstevnice)
     updateBoundaryContours();
@@ -739,6 +741,7 @@ function updateOrbitalState(n, l, m) {
     const params = getOrbitalParams(n, l, m);
     Rmax = params.Rmax;
     Pmax = params.Pmax;
+    Pmax_radial = params.Pmax_radial;
     
     // Generování a vykreslení teoretického tvaru orbitalu (3D vrstevnice)
     updateBoundaryContours();
@@ -790,19 +793,30 @@ function addElectrons(count) {
  */
 function sampleElectronPosition(n, l, m, Rmax, Pmax) {
     let attempts = 0;
-    const maxAttempts = 20000;
+    const maxAttempts = 30000; // Zvýšíme limit pro vyšší spolehlivost
     
     while (attempts < maxAttempts) {
         attempts++;
-        const x = (Math.random() * 2 - 1) * Rmax;
-        const y = (Math.random() * 2 - 1) * Rmax;
-        const z = (Math.random() * 2 - 1) * Rmax;
+        
+        // Vzorkování rovnoměrně v rámci sférických souřadnic
+        const r = Math.random() * Rmax;
+        const cosTheta = Math.random() * 2 - 1;
+        const theta = Math.acos(cosTheta);
+        const phi = Math.random() * 2 * Math.PI;
+        
+        // Převod na kartézské souřadnice
+        const x = r * Math.sin(theta) * Math.cos(phi);
+        const y = r * Math.sin(theta) * Math.sin(phi);
+        const z = r * Math.cos(theta);
         
         const psi = getActiveWaveFunction(x, y, z);
         const P = psi * psi;
         
-        const P_rand = Math.random() * Pmax;
-        if (P_rand < P) {
+        // Vážená pravděpodobnost akceptace s Jacobianem r^2
+        const P_radial = r * r * P;
+        
+        const P_rand = Math.random() * Pmax_radial;
+        if (P_rand < P_radial) {
             return { x, y, z, phase: psi };
         }
     }
