@@ -168,17 +168,17 @@ export function getOrbitalParams(n, l, m) {
             Pmax_radial = P_radial;
         }
         
-        points.push({ r, P });
+        points.push({ r, P, P_radial });
     }
     
     if (Pmax === 0) Pmax = 1e-5;
     if (Pmax_radial === 0) Pmax_radial = 1e-5;
     
-    // Detekujeme aktivní poloměr, kde pravděpodobnost neklesne pod 1e-5 * Pmax
-    const threshold = 1e-5 * Pmax;
+    // Detekujeme aktivní poloměr pomocí radiální pravděpodobnosti (vážené přes r^2)
+    const threshold_radial = 1e-5 * Pmax_radial;
     for (let i = 0; i < samples; i++) {
         const pt = points[i];
-        if (pt.P >= threshold) {
+        if (pt.P_radial >= threshold_radial) {
             if (pt.r > Rmax_detected) {
                 Rmax_detected = pt.r;
             }
@@ -268,17 +268,17 @@ export function getMolecularOrbitalParams(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, 
             Pmax_radial = P_radial;
         }
         
-        points.push({ r: distFromOrigin, P });
+        points.push({ r: distFromOrigin, P, P_radial });
     }
     
     if (Pmax === 0) Pmax = 1e-5;
     if (Pmax_radial === 0) Pmax_radial = 1e-5;
     
-    // Detekujeme aktivní poloměr od počátku
-    const threshold = 1e-5 * Pmax;
+    // Detekujeme aktivní poloměr od počátku pomocí radiální pravděpodobnosti
+    const threshold_radial = 1e-5 * Pmax_radial;
     for (let i = 0; i < samples; i++) {
         const pt = points[i];
-        if (pt.P >= threshold) {
+        if (pt.P_radial >= threshold_radial) {
             if (pt.r > Rmax_detected) {
                 Rmax_detected = pt.r;
             }
