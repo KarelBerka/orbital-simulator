@@ -1025,7 +1025,7 @@ function generateContourLines(n, l, m, Rmax, Pmax) {
     
     // Škálování prahu podle maxN pro kompenzaci prostorového rozptylu pravděpodobnosti u vyšších stavů
     const maxN = currentMode === 'atomic' ? n : Math.max(molN_A, molN_B);
-    const scaleFactor = Math.pow(maxN, 2.0);
+    const scaleFactor = Math.pow(maxN, 4.5);
     const C = (isoVal * Pmax) / scaleFactor;
     const thresholdVal = Math.sqrt(C); // vlnová funkce psi se rovná +/- thresholdVal pro hustotu C
     
