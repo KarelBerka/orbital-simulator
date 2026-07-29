@@ -74,6 +74,7 @@ const TRANSLATIONS = {
         'auto-rotate': 'Auto-rotace scény',
         'theoretical-shape': 'Teoretický tvar (konturový model)',
         'normalize-brightness': 'Normalizovaný jas bodů',
+        'show-nuclei': 'Zobrazit jádra atomů',
         'help-rotate': '🖱️ <b>Levé tlačítko:</b> Rotace scény',
         'help-zoom': '⚙️ <b>Kolečko:</b> Přiblížení (Zoom)',
         'help-pan': '✋ <b>Pravé tlačítko:</b> Posun scény',
@@ -143,6 +144,7 @@ const TRANSLATIONS = {
         'auto-rotate': 'Auto-rotate Scene',
         'theoretical-shape': 'Theoretical shape (contour model)',
         'normalize-brightness': 'Normalized point brightness',
+        'show-nuclei': 'Show atomic nuclei',
         'help-rotate': '🖱️ <b>Left button:</b> Rotate scene',
         'help-zoom': '⚙️ <b>Scroll wheel:</b> Zoom',
         'help-pan': '✋ <b>Right button:</b> Pan scene',
@@ -241,6 +243,7 @@ const toggleAxes = document.getElementById('toggle-axes');
 const toggleAutorotate = document.getElementById('toggle-autorotate');
 const toggleBoundary = document.getElementById('toggle-boundary');
 const toggleNormalizeColor = document.getElementById('toggle-normalize-color');
+const toggleNuclei = document.getElementById('toggle-nuclei');
 const sliderBoundaryIso = document.getElementById('slider-boundary-iso');
 
 // Spuštění aplikace po načtení DOMu
@@ -329,6 +332,10 @@ function setupThreeControls() {
     
     toggleNormalizeColor.addEventListener('change', () => {
         recolorPoints();
+    });
+    
+    toggleNuclei.addEventListener('change', (e) => {
+        visualizer.setNucleiVisibility(e.target.checked);
     });
     
     sliderBoundaryIso.addEventListener('input', () => {
@@ -626,6 +633,7 @@ function updateMolecularOrbitalState() {
     // Generování a vykreslení teoretického tvaru (3D vrstevnice)
     updateBoundaryContours();
     visualizer.toggleBoundaryShell(toggleBoundary.checked);
+    visualizer.updateNuclei('molecular', molDistance);
     
     // Smazání bodů
     visualizer.clearPoints();
@@ -746,6 +754,7 @@ function updateOrbitalState(n, l, m) {
     // Generování a vykreslení teoretického tvaru orbitalu (3D vrstevnice)
     updateBoundaryContours();
     visualizer.toggleBoundaryShell(toggleBoundary.checked);
+    visualizer.updateNuclei('atomic', 0);
     
     // Smazání stávajících bodů
     visualizer.clearPoints();

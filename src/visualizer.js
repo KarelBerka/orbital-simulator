@@ -74,6 +74,29 @@ export class OrbitalVisualizer {
         
         // Nastavení automatické rotace kamery
         this.autoRotate = true;
+
+        // Inicializace jádra/jader atomů (pulzující zelené koule)
+        this.nucleiGroup = new THREE.Group();
+        this.scene.add(this.nucleiGroup);
+        
+        const nucleusGeom = new THREE.SphereGeometry(0.4, 32, 32);
+        const nucleusMat = new THREE.MeshStandardMaterial({
+            color: 0x10b981,     // Zářivě zelená emerald barva
+            emissive: 0x059669,  // Neonově zelený svit
+            roughness: 0.1,
+            metalness: 0.8
+        });
+        
+        this.nucleusMeshA = new THREE.Mesh(nucleusGeom, nucleusMat);
+        this.nucleusMeshB = new THREE.Mesh(nucleusGeom, nucleusMat);
+        
+        this.nucleiGroup.add(this.nucleusMeshA);
+        this.nucleiGroup.add(this.nucleusMeshB);
+        
+        // Výchozí nastavení - v atomovém režimu je pouze jedno jádro v počátku
+        this.nucleusMeshA.position.set(0, 0, 0);
+        this.nucleusMeshB.visible = false;
+        this.nucleiVisible = true;
     }
 
     initPoints() {
@@ -302,6 +325,28 @@ export class OrbitalVisualizer {
         }
     }
 
+    /**
+     * Aktualizuje pozici jader podle aktivního režimu (atom/molekula).
+     */
+    updateNuclei(mode, d) {
+        if (mode === 'atomic') {
+            this.nucleusMeshA.position.set(0, 0, 0);
+            this.nucleusMeshB.visible = false;
+        } else {
+            this.nucleusMeshA.position.set(0, 0, -d / 2);
+            this.nucleusMeshB.position.set(0, 0, d / 2);
+            this.nucleusMeshB.visible = true;
+        }
+    }
+
+    /**
+     * Nastaví viditelnost atomových jader.
+     */
+    setNucleiVisibility(visible) {
+        this.nucleiVisible = visible;
+        this.nucleiGroup.visible = visible;
+    }
+
     onWindowResize() {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
@@ -315,17 +360,26 @@ export class OrbitalVisualizer {
     animate() {
         requestAnimationFrame(() => this.animate());
 
-        // Automatické otáčení scény (synchronizované pro body i čáry kontur)
+        // Automatické otáčení scény (synchronizované pro body, čáry kontur i jádra)
         if (this.autoRotate) {
             this.pointCloud.rotation.y += 0.002;
             if (this.contourLines) {
                 this.contourLines.rotation.y = this.pointCloud.rotation.y;
             }
+            this.nucleiGroup.rotation.y = this.pointCloud.rotation.y;
         } else {
             this.pointCloud.rotation.y = 0;
             if (this.contourLines) {
                 this.contourLines.rotation.y = 0;
             }
+            this.nucleiGroup.rotation.y = 0;
+        }
+
+        // Pulzující animace jader
+        if (this.nucleiVisible) {
+            const pulse = 1.0 + 0.18 * Math.sin(Date.now() * 0.004);
+            this.nucleusMeshA.scale.set(pulse, pulse, pulse);
+            this.nucleusMeshB.scale.set(pulse, pulse, pulse);
         }
 
         this.controls.update();
