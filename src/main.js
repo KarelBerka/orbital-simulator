@@ -1032,9 +1032,23 @@ function generateContourLines(n, l, m, Rmax, Pmax) {
     
     const isoVal = parseFloat(sliderBoundaryIso.value);
     
-    // Škálování prahu podle maxN pro kompenzaci prostorového rozptylu pravděpodobnosti u vyšších stavů
+    // Škálování prahu podle maxN a maxL pro kompenzaci prostorového rozptylu u vyšších stavů
     const maxN = currentMode === 'atomic' ? n : Math.max(molN_A, molN_B);
-    const scaleFactor = Math.pow(maxN, 4.5);
+    const maxL = currentMode === 'atomic' ? l : Math.max(molL_A, molL_B);
+    
+    // Pouze pro s-orbitaly (l=0) potřebujeme silnou kompenzaci kvůli dominantnímu počátku.
+    // Pro p-orbitaly (l=1) stačí mírná a pro d-orbitaly a vyšší (l>=2) není kompenzace nutná,
+    // protože Pmax je již přímo maximem hlavních laloků (nikoliv u jádra).
+    let exponent = 0.0;
+    if (maxL === 0) {
+        exponent = 3.5;
+    } else if (maxL === 1) {
+        exponent = 1.5;
+    } else {
+        exponent = 0.0;
+    }
+    
+    const scaleFactor = Math.pow(maxN, exponent);
     const C = (isoVal * Pmax) / scaleFactor;
     const thresholdVal = Math.sqrt(C); // vlnová funkce psi se rovná +/- thresholdVal pro hustotu C
     
