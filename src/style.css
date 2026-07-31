@@ -1033,6 +1033,58 @@ body.mode-atomic .molecular-only {
     display: none !important;
 }
 
+/* Násobné a individuální složky MO orbitalů */
+.mo-components-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem;
+}
+
+.btn-mo-chip {
+    padding: 0.45rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+}
+
+.btn-mo-chip:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-main);
+}
+
+.btn-mo-chip.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+}
+
+body.light-mode .btn-mo-chip {
+    background: rgba(15, 23, 42, 0.03);
+    border-color: rgba(15, 23, 42, 0.08);
+    color: var(--text-muted);
+}
+
+body.light-mode .btn-mo-chip:hover {
+    background: rgba(15, 23, 42, 0.06);
+}
+
+body.light-mode .btn-mo-chip.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #fff;
+}
+
 
 
 
