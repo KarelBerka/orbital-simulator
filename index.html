@@ -118,6 +118,18 @@
             <div class="sidebar-section molecular-only">
                 <h2 data-i18n="molecular-selection">Kombinace Orbitalů (LCAO)</h2>
                 
+                <!-- Násobnost vazby / Multi-orbital bond multiplicity -->
+                <div class="control-group">
+                    <label data-i18n="bond-order">Násobnost vazby (Kombinace MO)</label>
+                    <div class="btn-group-toggle" id="bond-order-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem;">
+                        <button class="btn-bond-order btn-toggle active" data-bond="custom" data-i18n="bond-custom">Vlastní MO</button>
+                        <button class="btn-bond-order btn-toggle" data-bond="single" data-i18n="bond-single">Jednoduchá (σ)</button>
+                        <button class="btn-bond-order btn-toggle" data-bond="double" data-i18n="bond-double">Dvojnásobná (σ+π)</button>
+                        <button class="btn-bond-order btn-toggle" data-bond="triple" data-i18n="bond-triple">Trojnásobná (σ+2π)</button>
+                        <button class="btn-bond-order btn-toggle" data-bond="quadruple" style="grid-column: span 2;" data-i18n="bond-quadruple">Čtyřnásobná (σ+2π+δ)</button>
+                    </div>
+                </div>
+                
                 <!-- Atom A -->
                 <div class="atom-card">
                     <div class="atom-card-title">
@@ -240,6 +252,9 @@
                         <button class="btn-mol-preset" data-preset="pi_2p">π₂ₚ_x</button>
                         <button class="btn-mol-preset" data-preset="pi_star_2p">π*₂ₚ_x</button>
                         <button class="btn-mol-preset" data-preset="sp_hybrid">sp (A) - s (B)</button>
+                        <button class="btn-mol-preset" data-preset="double_bond" data-i18n="preset-double">Dvojnásobná σ+π</button>
+                        <button class="btn-mol-preset" data-preset="triple_bond" data-i18n="preset-triple">Trojnásobná σ+2π (N₂)</button>
+                        <button class="btn-mol-preset" data-preset="quadruple_bond" data-i18n="preset-quadruple">Čtyřnásobná σ+2π+δ (Re₂)</button>
                     </div>
                 </div>
             </div>

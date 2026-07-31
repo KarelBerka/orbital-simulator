@@ -87,6 +87,16 @@ const TRANSLATIONS = {
         'tab-atomic-label': 'Atomové orbitaly',
         'tab-molecular-label': 'Molekulové orbitaly (LCAO)',
         'molecular-selection': 'Kombinace Orbitalů (LCAO)',
+        'bond-order': 'Násobnost vazby (Kombinace MO)',
+        'bond-custom': 'Vlastní MO',
+        'bond-single': 'Jednoduchá (σ)',
+        'bond-double': 'Dvojnásobná (σ + π)',
+        'bond-triple': 'Trojnásobná (σ + 2π)',
+        'bond-quadruple': 'Čtyřnásobná (σ + 2π + δ)',
+        'preset-single': 'Jednoduchá σ',
+        'preset-double': 'Dvojnásobná σ+π',
+        'preset-triple': 'Trojnásobná σ+2π (N₂)',
+        'preset-quadruple': 'Čtyřnásobná σ+2π+δ (Re₂)',
         'nuclei-distance': 'Vzdálenost jader (d)',
         'dist-close': 'Blízko (1a₀)',
         'dist-far': 'Daleko (12a₀)',
@@ -160,6 +170,16 @@ const TRANSLATIONS = {
         'tab-atomic-label': 'Atomic Orbitals',
         'tab-molecular-label': 'Molecular Orbitals (LCAO)',
         'molecular-selection': 'Orbital Combination (LCAO)',
+        'bond-order': 'Bond Order (MO Combination)',
+        'bond-custom': 'Custom MO',
+        'bond-single': 'Single Bond (σ)',
+        'bond-double': 'Double Bond (σ + π)',
+        'bond-triple': 'Triple Bond (σ + 2π)',
+        'bond-quadruple': 'Quadruple Bond (σ + 2π + δ)',
+        'preset-single': 'Single σ',
+        'preset-double': 'Double σ+π',
+        'preset-triple': 'Triple σ+2π (N₂)',
+        'preset-quadruple': 'Quadruple σ+2π+δ (Re₂)',
         'nuclei-distance': 'Inter-nuclear Distance (d)',
         'dist-close': 'Close (1a₀)',
         'dist-far': 'Far (12a₀)',
@@ -195,6 +215,7 @@ let molN_B = 1, molL_B = 0, molM_B = 0;
 let molZ_A = 1, molZ_B = 1;
 let molDistance = 4.0;
 let molCombination = 'bonding'; // 'bonding' nebo 'antibonding'
+let molBondType = 'custom'; // 'custom', 'single', 'double', 'triple', 'quadruple'
 
 // Elementy UI (původní atomové)
 const selectN = document.getElementById('select-n');
@@ -284,10 +305,71 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 
+/**
+ * Vypočte celkovou hustotu pravděpodobnosti rho = sum |psi_i|^2 a efektivní fázi pro násobné vazby.
+ */
+function getMultiOrbitalBondData(x, y, z) {
+    const d = molDistance;
+    const Z_A = molZ_A;
+    const Z_B = molZ_B;
+    
+    let components = [];
+    
+    if (molBondType === 'single') {
+        // Jednoduchá vazba sigma (2p_z)
+        const psi_sigma = molecularWaveFunction(2, 1, 0, 2, 1, 0, d, 1.0, -1.0, x, y, z, Z_A, Z_B);
+        components.push({ psi: psi_sigma, p: psi_sigma * psi_sigma });
+    } else if (molBondType === 'double') {
+        // Dvojnásobná vazba (sigma_2pz + pi_2px)
+        const psi_sigma = molecularWaveFunction(2, 1, 0, 2, 1, 0, d, 1.0, -1.0, x, y, z, Z_A, Z_B);
+        const psi_pi_x = molecularWaveFunction(2, 1, 1, 2, 1, 1, d, 1.0, 1.0, x, y, z, Z_A, Z_B);
+        components.push({ psi: psi_sigma, p: psi_sigma * psi_sigma });
+        components.push({ psi: psi_pi_x, p: psi_pi_x * psi_pi_x });
+    } else if (molBondType === 'triple') {
+        // Trojnásobná vazba (sigma_2pz + pi_2px + pi_2py) - např. N2
+        const psi_sigma = molecularWaveFunction(2, 1, 0, 2, 1, 0, d, 1.0, -1.0, x, y, z, Z_A, Z_B);
+        const psi_pi_x = molecularWaveFunction(2, 1, 1, 2, 1, 1, d, 1.0, 1.0, x, y, z, Z_A, Z_B);
+        const psi_pi_y = molecularWaveFunction(2, 1, -1, 2, 1, -1, d, 1.0, 1.0, x, y, z, Z_A, Z_B);
+        components.push({ psi: psi_sigma, p: psi_sigma * psi_sigma });
+        components.push({ psi: psi_pi_x, p: psi_pi_x * psi_pi_x });
+        components.push({ psi: psi_pi_y, p: psi_pi_y * psi_pi_y });
+    } else if (molBondType === 'quadruple') {
+        // Čtyřnásobná vazba (sigma_3dz2 + pi_3dxz + pi_3dyz + delta_3dxy) - např. Re2^6+ nebo Cr2
+        const psi_sigma = molecularWaveFunction(3, 2, 0, 3, 2, 0, d, 1.0, 1.0, x, y, z, Z_A, Z_B);
+        const psi_pi_x = molecularWaveFunction(3, 2, 1, 3, 2, 1, d, 1.0, 1.0, x, y, z, Z_A, Z_B);
+        const psi_pi_y = molecularWaveFunction(3, 2, -1, 3, 2, -1, d, 1.0, 1.0, x, y, z, Z_A, Z_B);
+        const psi_delta = molecularWaveFunction(3, 2, -2, 3, 2, -2, d, 1.0, 1.0, x, y, z, Z_A, Z_B);
+        components.push({ psi: psi_sigma, p: psi_sigma * psi_sigma });
+        components.push({ psi: psi_pi_x, p: psi_pi_x * psi_pi_x });
+        components.push({ psi: psi_pi_y, p: psi_pi_y * psi_pi_y });
+        components.push({ psi: psi_delta, p: psi_delta * psi_delta });
+    }
+
+    let totalP = 0;
+    let maxCompP = -1;
+    let selectedPsi = 0;
+    
+    for (let i = 0; i < components.length; i++) {
+        const c = components[i];
+        totalP += c.p;
+        if (c.p > maxCompP) {
+            maxCompP = c.p;
+            selectedPsi = c.psi;
+        }
+    }
+    
+    return {
+        totalP,
+        effectivePsi: selectedPsi
+    };
+}
+
 // Pomocné funkce pro vlnové funkce a pravděpodobnosti v závislosti na režimu (Atomový vs LCAO)
 function getActiveWaveFunction(x, y, z) {
     if (currentMode === 'atomic') {
         return waveFunction(currentN, currentL, currentM, x, y, z, currentZ);
+    } else if (molBondType !== 'custom') {
+        return getMultiOrbitalBondData(x, y, z).effectivePsi;
     } else {
         const c_A = 1.0;
         const c_B = molCombination === 'bonding' ? 1.0 : -1.0;
@@ -302,6 +384,8 @@ function getActiveWaveFunction(x, y, z) {
 function getActiveProbabilityDensity(x, y, z) {
     if (currentMode === 'atomic') {
         return probabilityDensity(currentN, currentL, currentM, x, y, z, currentZ);
+    } else if (molBondType !== 'custom') {
+        return getMultiOrbitalBondData(x, y, z).totalP;
     } else {
         const c_A = 1.0;
         const c_B = molCombination === 'bonding' ? 1.0 : -1.0;
@@ -444,6 +528,7 @@ function setupPhysicsControls() {
     // --- Nové molekulové ovládání ---
     // Nastavení Atomu A
     selectNA.addEventListener('change', () => {
+        setBondTypeToCustom();
         const n = parseInt(selectNA.value);
         repopulateLSelectGeneric(selectLA, n);
         const l = parseInt(selectLA.value);
@@ -451,11 +536,13 @@ function setupPhysicsControls() {
         updateMolecularOrbitalState();
     });
     selectLA.addEventListener('change', () => {
+        setBondTypeToCustom();
         const l = parseInt(selectLA.value);
         repopulateMSelectGeneric(selectMA, l);
         updateMolecularOrbitalState();
     });
     selectMA.addEventListener('change', () => {
+        setBondTypeToCustom();
         updateMolecularOrbitalState();
     });
     selectZA.addEventListener('change', () => {
@@ -465,6 +552,7 @@ function setupPhysicsControls() {
 
     // Nastavení Atomu B
     selectNB.addEventListener('change', () => {
+        setBondTypeToCustom();
         const n = parseInt(selectNB.value);
         repopulateLSelectGeneric(selectLB, n);
         const l = parseInt(selectLB.value);
@@ -472,16 +560,43 @@ function setupPhysicsControls() {
         updateMolecularOrbitalState();
     });
     selectLB.addEventListener('change', () => {
+        setBondTypeToCustom();
         const l = parseInt(selectLB.value);
         repopulateMSelectGeneric(selectMB, l);
         updateMolecularOrbitalState();
     });
     selectMB.addEventListener('change', () => {
+        setBondTypeToCustom();
         updateMolecularOrbitalState();
     });
     selectZB.addEventListener('change', () => {
         molZ_B = parseInt(selectZB.value);
         updateMolecularOrbitalState();
+    });
+
+    // Tlačítka násobnosti vazby (Vlastní, Jednoduchá, Dvojnásobná, Trojnásobná, Čtyřnásobná)
+    const bondOrderButtons = document.querySelectorAll('.btn-bond-order');
+    bondOrderButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            bondOrderButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            molBondType = btn.dataset.bond;
+            
+            if (molBondType === 'single') {
+                molDistance = 4.0;
+            } else if (molBondType === 'double') {
+                molDistance = 3.8;
+            } else if (molBondType === 'triple') {
+                molDistance = 3.5;
+            } else if (molBondType === 'quadruple') {
+                molDistance = 3.2;
+            }
+            sliderDistance.value = molDistance;
+            valDistance.textContent = `d = ${molDistance.toFixed(1)} a₀`;
+            
+            updateMolecularOrbitalState();
+        });
     });
 
     // Změna vzdálenosti jader
@@ -493,12 +608,14 @@ function setupPhysicsControls() {
 
     // Typ kombinace (vazebný / antivazebný)
     btnBonding.addEventListener('click', () => {
+        setBondTypeToCustom();
         btnBonding.classList.add('active');
         btnAntibonding.classList.remove('active');
         molCombination = 'bonding';
         updateMolecularOrbitalState();
     });
     btnAntibonding.addEventListener('click', () => {
+        setBondTypeToCustom();
         btnAntibonding.classList.add('active');
         btnBonding.classList.remove('active');
         molCombination = 'antibonding';
@@ -640,6 +757,20 @@ function setMode(mode) {
     }
 }
 
+function setBondTypeToCustom() {
+    if (molBondType !== 'custom') {
+        molBondType = 'custom';
+        const bondOrderButtons = document.querySelectorAll('.btn-bond-order');
+        bondOrderButtons.forEach(b => {
+            if (b.dataset.bond === 'custom') {
+                b.classList.add('active');
+            } else {
+                b.classList.remove('active');
+            }
+        });
+    }
+}
+
 /**
  * Aktualizuje stav molekuly a resetuje simulované body
  */
@@ -654,19 +785,43 @@ function updateMolecularOrbitalState() {
     molM_B = parseInt(selectMB.value);
     molZ_B = parseInt(selectZB.value);
     
-    const c_A = 1.0;
-    const c_B = molCombination === 'bonding' ? 1.0 : -1.0;
-    
-    // Získání fyzikálních parametrů LCAO molekuly
-    const params = getMolecularOrbitalParams(
-        molN_A, molL_A, molM_A,
-        molN_B, molL_B, molM_B,
-        molDistance, c_A, c_B,
-        molZ_A, molZ_B
-    );
-    Rmax = params.Rmax;
-    Pmax = params.Pmax;
-    Pmax_radial = params.Pmax_radial;
+    if (molBondType === 'single') {
+        const params = getMolecularOrbitalParams(2, 1, 0, 2, 1, 0, molDistance, 1.0, -1.0, molZ_A, molZ_B);
+        Rmax = params.Rmax;
+        Pmax = params.Pmax;
+        Pmax_radial = params.Pmax_radial;
+    } else if (molBondType === 'double') {
+        const p1 = getMolecularOrbitalParams(2, 1, 0, 2, 1, 0, molDistance, 1.0, -1.0, molZ_A, molZ_B);
+        const p2 = getMolecularOrbitalParams(2, 1, 1, 2, 1, 1, molDistance, 1.0, 1.0, molZ_A, molZ_B);
+        Rmax = Math.max(p1.Rmax, p2.Rmax);
+        Pmax = p1.Pmax + p2.Pmax;
+        Pmax_radial = p1.Pmax_radial + p2.Pmax_radial;
+    } else if (molBondType === 'triple') {
+        const p1 = getMolecularOrbitalParams(2, 1, 0, 2, 1, 0, molDistance, 1.0, -1.0, molZ_A, molZ_B);
+        const p2 = getMolecularOrbitalParams(2, 1, 1, 2, 1, 1, molDistance, 1.0, 1.0, molZ_A, molZ_B);
+        Rmax = Math.max(p1.Rmax, p2.Rmax);
+        Pmax = p1.Pmax + 2 * p2.Pmax;
+        Pmax_radial = p1.Pmax_radial + 2 * p2.Pmax_radial;
+    } else if (molBondType === 'quadruple') {
+        const p1 = getMolecularOrbitalParams(3, 2, 0, 3, 2, 0, molDistance, 1.0, 1.0, molZ_A, molZ_B);
+        const p2 = getMolecularOrbitalParams(3, 2, 1, 3, 2, 1, molDistance, 1.0, 1.0, molZ_A, molZ_B);
+        const p3 = getMolecularOrbitalParams(3, 2, 2, 3, 2, 2, molDistance, 1.0, 1.0, molZ_A, molZ_B);
+        Rmax = Math.max(p1.Rmax, p2.Rmax, p3.Rmax);
+        Pmax = p1.Pmax + 2 * p2.Pmax + p3.Pmax;
+        Pmax_radial = p1.Pmax_radial + 2 * p2.Pmax_radial + p3.Pmax_radial;
+    } else {
+        const c_A = 1.0;
+        const c_B = molCombination === 'bonding' ? 1.0 : -1.0;
+        const params = getMolecularOrbitalParams(
+            molN_A, molL_A, molM_A,
+            molN_B, molL_B, molM_B,
+            molDistance, c_A, c_B,
+            molZ_A, molZ_B
+        );
+        Rmax = params.Rmax;
+        Pmax = params.Pmax;
+        Pmax_radial = params.Pmax_radial;
+    }
     
     // Generování a vykreslení teoretického tvaru (3D vrstevnice)
     updateBoundaryContours();
@@ -692,8 +847,25 @@ function applyMolecularPreset(preset) {
     let nB = 1, lB = 0, mB = 0;
     let d = 4.0;
     let comb = 'bonding';
+    let bType = 'custom';
     
     switch (preset) {
+        case 'single_bond':
+            bType = 'single';
+            d = 4.0;
+            break;
+        case 'double_bond':
+            bType = 'double';
+            d = 3.8;
+            break;
+        case 'triple_bond':
+            bType = 'triple';
+            d = 3.5;
+            break;
+        case 'quadruple_bond':
+            bType = 'quadruple';
+            d = 3.2;
+            break;
         case 'sigma_1s':
             nA = 1; lA = 0; mA = 0;
             nB = 1; lB = 0; mB = 0;
@@ -738,6 +910,16 @@ function applyMolecularPreset(preset) {
             break;
     }
     
+    molBondType = bType;
+    const bondOrderButtons = document.querySelectorAll('.btn-bond-order');
+    bondOrderButtons.forEach(b => {
+        if (b.dataset.bond === molBondType) {
+            b.classList.add('active');
+        } else {
+            b.classList.remove('active');
+        }
+    });
+
     molZ_A = 1;
     molZ_B = 1;
     selectZA.value = 1;
@@ -773,6 +955,16 @@ function applyMolecularPreset(preset) {
  * Vygeneruje LaTeX zápis molekulární vlnové funkce
  */
 function getMolecularLatexFormula() {
+    if (molBondType === 'single') {
+        return `$$\\rho_{\\text{single}} = |\\psi_{\\sigma_{2p_z}}|^2$$`;
+    } else if (molBondType === 'double') {
+        return `$$\\rho_{\\text{double}} = |\\psi_{\\sigma_{2p_z}}|^2 + |\\psi_{\\pi_{2p_x}}|^2$$`;
+    } else if (molBondType === 'triple') {
+        return `$$\\rho_{\\text{triple}} = |\\psi_{\\sigma_{2p_z}}|^2 + |\\psi_{\\pi_{2p_x}}|^2 + |\\psi_{\\pi_{2p_y}}|^2 \\quad (\\text{e.g. } \\text{N}_2)$$`;
+    } else if (molBondType === 'quadruple') {
+        return `$$\\rho_{\\text{quadruple}} = |\\psi_{\\sigma_{3d_{z^2}}}|^2 + |\\psi_{\\pi_{3d_{xz}}}|^2 + |\\psi_{\\pi_{3d_{yz}}}|^2 + |\\psi_{\\delta_{3d_{xy}}}|^2 \\quad (\\text{e.g. } \\text{Re}_2^{6+})$$`;
+    }
+
     const labelA = ORBITAL_NAMES[molL_A]?.[molM_A] || molM_A;
     const labelB = ORBITAL_NAMES[molL_B]?.[molM_B] || molM_B;
     const sign = molCombination === 'bonding' ? '+' : '-';
