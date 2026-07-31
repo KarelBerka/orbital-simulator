@@ -75,28 +75,48 @@ export class OrbitalVisualizer {
         // Nastavení automatické rotace kamery
         this.autoRotate = true;
 
-        // Inicializace jádra/jader atomů (pulzující zelené koule)
+        // Inicializace jádra/jader atomů (pulzující barevné koule)
         this.nucleiGroup = new THREE.Group();
         this.scene.add(this.nucleiGroup);
         
         const nucleusGeom = new THREE.SphereGeometry(0.4, 32, 32);
         const nucleusMat = new THREE.MeshStandardMaterial({
-            color: 0x10b981,     // Zářivě zelená emerald barva
-            emissive: 0x059669,  // Neonově zelený svit
+            color: 0x10b981,     // Výchozí zářivě zelená barva
+            emissive: 0x059669,  // Výchozí neonově zelený svit
             roughness: 0.1,
             metalness: 0.8
         });
         
+        this.nucleusMaterial = nucleusMat;
         this.nucleusMeshA = new THREE.Mesh(nucleusGeom, nucleusMat);
         this.nucleusMeshB = new THREE.Mesh(nucleusGeom, nucleusMat);
         
         this.nucleiGroup.add(this.nucleusMeshA);
         this.nucleiGroup.add(this.nucleusMeshB);
+
+        // Inicializace sekundárního vlnového haló efektu (šířící se vlna 1x až 100x velikost jádra)
+        this.haloMaterial = new THREE.MeshBasicMaterial({
+            color: 0x10b981,
+            transparent: true,
+            opacity: 0.0,
+            depthWrite: false
+        });
         
-        // Výchozí nastavení - v atomovém režimu je pouze jedno jádro v počátku
+        const haloGeom = new THREE.SphereGeometry(0.4, 16, 16);
+        this.haloMeshA = new THREE.Mesh(haloGeom, this.haloMaterial);
+        this.haloMeshB = new THREE.Mesh(haloGeom, this.haloMaterial);
+        
+        this.nucleiGroup.add(this.haloMeshA);
+        this.nucleiGroup.add(this.haloMeshB);
+        
+        // Výchozí nastavení - v atomovém režimu je pouze jedno jádro a haló v počátku
         this.nucleusMeshA.position.set(0, 0, 0);
         this.nucleusMeshB.visible = false;
+        this.haloMeshA.position.set(0, 0, 0);
+        this.haloMeshB.visible = false;
+        
         this.nucleiVisible = true;
+        this.updateNucleiColor(); // Nastavíme kontrastní barvu ihned
     }
 
     initPoints() {
@@ -323,6 +343,48 @@ export class OrbitalVisualizer {
             this.colorPos.set(theme === 'light' ? '#c62828' : '#f44336');
             this.colorNeg.set(theme === 'light' ? '#1565c0' : '#2196f3');
         }
+        
+        this.updateNucleiColor();
+    }
+
+    /**
+     * Vybere kontrastní barvu pro jádra atomů vůči vybranému barevnému schématu.
+     */
+    updateNucleiColor() {
+        const theme = this.currentTheme;
+        const scheme = this.currentScheme;
+        
+        let colorStr = '#10b981'; // Výchozí zelená
+        let emissiveStr = '#059669';
+        
+        if (scheme === 'orange-cyan') {
+            // Kontrastní k oranžové a tyrkysové -> fialová/purpurová
+            colorStr = theme === 'light' ? '#7b1fa2' : '#d946ef';
+            emissiveStr = theme === 'light' ? '#4a148c' : '#a21caf';
+        } else if (scheme === 'pink-green') {
+            // Kontrastní k růžové a zelené -> jasně žlutá
+            colorStr = theme === 'light' ? '#b45309' : '#ffeb3b';
+            emissiveStr = theme === 'light' ? '#78350f' : '#f59e0b';
+        } else if (scheme === 'purple-yellow') {
+            // Kontrastní k fialové a žluté -> azurová/tyrkysová
+            colorStr = theme === 'light' ? '#006064' : '#00e5ff';
+            emissiveStr = theme === 'light' ? '#00363a' : '#00b8d4';
+        } else if (scheme === 'classic') {
+            // Kontrastní k červené a modré -> zářivě zelená/limetková
+            colorStr = theme === 'light' ? '#1b5e20' : '#22c55e';
+            emissiveStr = theme === 'light' ? '#0d3c12' : '#15803d';
+        }
+        
+        if (this.nucleusMaterial) {
+            this.nucleusMaterial.color.set(colorStr);
+            this.nucleusMaterial.emissive.set(emissiveStr);
+            this.nucleusMaterial.needsUpdate = true;
+        }
+        
+        if (this.haloMaterial) {
+            this.haloMaterial.color.set(colorStr);
+            this.haloMaterial.needsUpdate = true;
+        }
     }
 
     /**
@@ -332,10 +394,15 @@ export class OrbitalVisualizer {
         if (mode === 'atomic') {
             this.nucleusMeshA.position.set(0, 0, 0);
             this.nucleusMeshB.visible = false;
+            this.haloMeshA.position.set(0, 0, 0);
+            this.haloMeshB.visible = false;
         } else {
             this.nucleusMeshA.position.set(0, 0, -d / 2);
             this.nucleusMeshB.position.set(0, 0, d / 2);
             this.nucleusMeshB.visible = true;
+            this.haloMeshA.position.set(0, 0, -d / 2);
+            this.haloMeshB.position.set(0, 0, d / 2);
+            this.haloMeshB.visible = true;
         }
     }
 
@@ -375,11 +442,31 @@ export class OrbitalVisualizer {
             this.nucleiGroup.rotation.y = 0;
         }
 
-        // Pulzující animace jader
+        // Pulzující a blikající animace jader
         if (this.nucleiVisible) {
-            const pulse = 1.0 + 0.18 * Math.sin(Date.now() * 0.004);
+            // 1. Základní mírná oscilace jádra (1.0x až 1.3x)
+            const pulse = 1.0 + 0.15 * Math.sin(Date.now() * 0.004);
             this.nucleusMeshA.scale.set(pulse, pulse, pulse);
             this.nucleusMeshB.scale.set(pulse, pulse, pulse);
+
+            // 2. Šíření rázové vlny (blikání) v rozsahu 1x až 100x násobku poloměru jádra
+            const time = Date.now() * 0.0006; // Rychlost šíření vlny
+            const waveProgress = (time % 1.0); // Hodnota jde od 0.0 do 1.0 (opakující se cyklus)
+            
+            const haloScale = 1.0 + 99.0 * waveProgress; // Zvětšení od 1x do 100x
+            // Opacita klesá k nule jak se vlna rozšiřuje, čímž vzniká plynulé blikání a vytracení
+            const haloOpacity = 0.25 * Math.pow(1.0 - waveProgress, 2.0); 
+            
+            this.haloMeshA.scale.set(haloScale, haloScale, haloScale);
+            this.haloMeshB.scale.set(haloScale, haloScale, haloScale);
+            
+            if (this.haloMaterial) {
+                this.haloMaterial.opacity = haloOpacity;
+            }
+        } else {
+            if (this.haloMaterial) {
+                this.haloMaterial.opacity = 0.0;
+            }
         }
 
         this.controls.update();
