@@ -37,21 +37,21 @@ export function associatedLaguerre(k, alpha, x) {
 }
 
 /**
- * Radiální vlnová funkce R_{n,l}(r) pro atom vodíku (Z=1, Bohrův poloměr a_0 = 1)
+ * Radiální vlnová funkce R_{n,l}(r) pro hydrogenní atom s nábojem jádra Z (Bohrův poloměr a_0 = 1)
  */
-export function radialWaveFunction(n, l, r) {
+export function radialWaveFunction(n, l, r, Z = 1) {
     if (l >= n || l < 0) return 0;
     
     const k = n - l - 1;
     const alpha = 2 * l + 1;
-    const x = (2 * r) / n;
+    const x = (2 * Z * r) / n;
     
-    // Normalizační konstanta: sqrt( (2/n)^3 * (n-l-1)! / (2n * (n+l)!) )
-    const term1 = Math.pow(2 / n, 3);
+    // Normalizační konstanta pro náboj Z: sqrt( (2Z/n)^3 * (n-l-1)! / (2n * (n+l)!) )
+    const term1 = Math.pow((2 * Z) / n, 3);
     const term2 = factorial(k) / (2 * n * factorial(n + l));
     const norm = Math.sqrt(term1 * term2);
     
-    const expTerm = Math.exp(-r / n);
+    const expTerm = Math.exp(-Z * r / n);
     const powerTerm = Math.pow(x, l);
     const laguerreTerm = associatedLaguerre(k, alpha, x);
     
@@ -111,20 +111,20 @@ export function realSphericalHarmonic(l, m, x, y, z) {
 }
 
 /**
- * Celková vlnová funkce psi(x,y,z) pro hydrogenní stav (n, l, m).
+ * Celková vlnová funkce psi(x,y,z) pro hydrogenní stav (n, l, m) s nábojem jádra Z.
  */
-export function waveFunction(n, l, m, x, y, z) {
+export function waveFunction(n, l, m, x, y, z, Z = 1) {
     const r = Math.sqrt(x*x + y*y + z*z);
-    const R = radialWaveFunction(n, l, r);
+    const R = radialWaveFunction(n, l, r, Z);
     const Y = realSphericalHarmonic(l, m, x, y, z);
     return R * Y;
 }
 
 /**
- * Hustota pravděpodobnosti výskytu elektronu |psi(x,y,z)|^2.
+ * Hustota pravděpodobnosti výskytu elektronu |psi(x,y,z)|^2 s nábojem jádra Z.
  */
-export function probabilityDensity(n, l, m, x, y, z) {
-    const psi = waveFunction(n, l, m, x, y, z);
+export function probabilityDensity(n, l, m, x, y, z, Z = 1) {
+    const psi = waveFunction(n, l, m, x, y, z, Z);
     return psi * psi;
 }
 
@@ -134,15 +134,15 @@ export function probabilityDensity(n, l, m, x, y, z) {
  * - Pmax: maximální hodnota hustoty pravděpodobnosti |psi|^2 v krabici
  * - Pmax_radial: maximální hodnota radiálně vážené hustoty r^2 * |psi|^2 pro sférické vzorkování
  */
-export function getOrbitalParams(n, l, m) {
+export function getOrbitalParams(n, l, m, Z = 1) {
     let Pmax = 0;
     let Pmax_radial = 0;
     let Rmax_detected = 2.0; // Minimální rozumný poloměr
     const samples = 15000;
     const points = [];
     
-    // Maximální teoretický poloměr vyhledávání
-    const R_search = 3 * n * n + 5 * n + 10;
+    // Maximální teoretický poloměr vyhledávání (škálovaný s 1/Z)
+    const R_search = (3 * n * n + 5 * n + 10) / Z;
     
     for (let i = 0; i < samples; i++) {
         const u1 = Math.random();
@@ -158,7 +158,7 @@ export function getOrbitalParams(n, l, m) {
         const y = r * Math.sin(theta) * Math.sin(phi);
         const z = r * Math.cos(theta);
         
-        const P = probabilityDensity(n, l, m, x, y, z);
+        const P = probabilityDensity(n, l, m, x, y, z, Z);
         if (P > Pmax) {
             Pmax = P;
         }
@@ -185,8 +185,8 @@ export function getOrbitalParams(n, l, m) {
         }
     }
     
-    // Přidáme 15% bezpečnostní okraj
-    const Rmax = Math.max(5.0, Rmax_detected * 1.15);
+    // Přidáme 15% bezpečnostní okraj (minimální poloměr škálovaný s 1/Z)
+    const Rmax = Math.max(5.0 / Z, Rmax_detected * 1.15);
     
     return {
         Rmax,
@@ -199,35 +199,35 @@ export function getOrbitalParams(n, l, m) {
  * Celková vlnová funkce pro molekulový orbital v aproximaci LCAO (Linear Combination of Atomic Orbitals).
  * Dva atomové orbitaly A a B jsou umístěny na ose Z ve vzdálenostech -d/2 a d/2.
  */
-export function molecularWaveFunction(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, x, y, z) {
-    // Atom A na pozici (0, 0, -d/2)
-    const psi_A = waveFunction(n_A, l_A, m_A, x, y, z + d / 2);
-    // Atom B na pozici (0, 0, d/2)
-    const psi_B = waveFunction(n_B, l_B, m_B, x, y, z - d / 2);
+export function molecularWaveFunction(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, x, y, z, Z_A = 1, Z_B = 1) {
+    // Atom A na pozici (0, 0, -d/2) s nábojem jádra Z_A
+    const psi_A = waveFunction(n_A, l_A, m_A, x, y, z + d / 2, Z_A);
+    // Atom B na pozici (0, 0, d/2) s nábojem jádra Z_B
+    const psi_B = waveFunction(n_B, l_B, m_B, x, y, z - d / 2, Z_B);
     return c_A * psi_A + c_B * psi_B;
 }
 
 /**
  * Hustota pravděpodobnosti molekulového orbitalu |psi_MO|^2.
  */
-export function molecularProbabilityDensity(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, x, y, z) {
-    const psi = molecularWaveFunction(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, x, y, z);
+export function molecularProbabilityDensity(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, x, y, z, Z_A = 1, Z_B = 1) {
+    const psi = molecularWaveFunction(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, x, y, z, Z_A, Z_B);
     return psi * psi;
 }
 
 /**
  * Odhadne parametry molekulového orbitalu (Rmax a Pmax) pro potřeby Monte Carlo vzorkování.
  */
-export function getMolecularOrbitalParams(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B) {
+export function getMolecularOrbitalParams(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, Z_A = 1, Z_B = 1) {
     let Pmax = 0;
     let Pmax_radial = 0;
     let Rmax_detected = 2.0;
     const samples = 20000;
     const points = [];
     
-    // Získáme odhady pro jednotlivé atomové orbitaly
-    const paramsA = getOrbitalParams(n_A, l_A, m_A);
-    const paramsB = getOrbitalParams(n_B, l_B, m_B);
+    // Získáme odhady pro jednotlivé atomové orbitaly s jejich náboji Z_A a Z_B
+    const paramsA = getOrbitalParams(n_A, l_A, m_A, Z_A);
+    const paramsB = getOrbitalParams(n_B, l_B, m_B, Z_B);
     
     // Základní poloměr vyhledávání musí pokrýt oba atomy a jejich rozsah
     const baseRmax = Math.max(paramsA.Rmax, paramsB.Rmax) + d / 2;
@@ -256,7 +256,7 @@ export function getMolecularOrbitalParams(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, 
         const y = r * Math.sin(theta) * Math.sin(phi);
         const z = r * Math.cos(theta) + centerZ;
         
-        const P = molecularProbabilityDensity(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, x, y, z);
+        const P = molecularProbabilityDensity(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, c_B, x, y, z, Z_A, Z_B);
         if (P > Pmax) {
             Pmax = P;
         }
@@ -286,7 +286,7 @@ export function getMolecularOrbitalParams(n_A, l_A, m_A, n_B, l_B, m_B, d, c_A, 
     }
     
     // Bezpečnostní rezerva
-    const Rmax = Math.max(paramsA.Rmax + d/2, Rmax_detected * 1.15);
+    const Rmax = Math.max(Math.max(paramsA.Rmax, paramsB.Rmax) + d/2, Rmax_detected * 1.15);
     
     return {
         Rmax,

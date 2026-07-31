@@ -75,6 +75,9 @@ const TRANSLATIONS = {
         'theoretical-shape': 'Teoretický tvar (konturový model)',
         'normalize-brightness': 'Normalizovaný jas bodů',
         'show-nuclei': 'Zobrazit jádra atomů',
+        'nucleus-z': 'Jádro atomu (Z)',
+        'nucleus-z-a': 'Jádro atomu A (Z_A)',
+        'nucleus-z-b': 'Jádro atomu B (Z_B)',
         'help-rotate': '🖱️ <b>Levé tlačítko:</b> Rotace scény',
         'help-zoom': '⚙️ <b>Kolečko:</b> Přiblížení (Zoom)',
         'help-pan': '✋ <b>Pravé tlačítko:</b> Posun scény',
@@ -145,6 +148,9 @@ const TRANSLATIONS = {
         'theoretical-shape': 'Theoretical shape (contour model)',
         'normalize-brightness': 'Normalized point brightness',
         'show-nuclei': 'Show atomic nuclei',
+        'nucleus-z': 'Atomic nucleus (Z)',
+        'nucleus-z-a': 'Atomic nucleus A (Z_A)',
+        'nucleus-z-b': 'Atomic nucleus B (Z_B)',
         'help-rotate': '🖱️ <b>Left button:</b> Rotate scene',
         'help-zoom': '⚙️ <b>Scroll wheel:</b> Zoom',
         'help-pan': '✋ <b>Right button:</b> Pan scene',
@@ -174,6 +180,7 @@ let currentMode = 'atomic'; // 'atomic' nebo 'molecular'
 let currentN = 1;
 let currentL = 0;
 let currentM = 0;
+let currentZ = 1;
 let Rmax = 7;
 let Pmax = 1;
 let Pmax_radial = 1;
@@ -185,6 +192,7 @@ let isModalOpen = false;
 // Globální stav pro molekulový režim
 let molN_A = 1, molL_A = 0, molM_A = 0;
 let molN_B = 1, molL_B = 0, molM_B = 0;
+let molZ_A = 1, molZ_B = 1;
 let molDistance = 4.0;
 let molCombination = 'bonding'; // 'bonding' nebo 'antibonding'
 
@@ -192,6 +200,7 @@ let molCombination = 'bonding'; // 'bonding' nebo 'antibonding'
 const selectN = document.getElementById('select-n');
 const selectL = document.getElementById('select-l');
 const selectM = document.getElementById('select-m');
+const selectZ = document.getElementById('select-z');
 const btnAdd1 = document.getElementById('btn-add-1');
 const btnAdd100 = document.getElementById('btn-add-100');
 const btnAdd1000 = document.getElementById('btn-add-1000');
@@ -211,9 +220,11 @@ const tabMolecular = document.getElementById('tab-molecular');
 const selectNA = document.getElementById('select-n-a');
 const selectLA = document.getElementById('select-l-a');
 const selectMA = document.getElementById('select-m-a');
+const selectZA = document.getElementById('select-z-a');
 const selectNB = document.getElementById('select-n-b');
 const selectLB = document.getElementById('select-l-b');
 const selectMB = document.getElementById('select-m-b');
+const selectZB = document.getElementById('select-z-b');
 const sliderDistance = document.getElementById('slider-distance');
 const valDistance = document.getElementById('val-distance');
 const btnBonding = document.getElementById('btn-bonding');
@@ -275,28 +286,28 @@ window.addEventListener('DOMContentLoaded', () => {
 // Pomocné funkce pro vlnové funkce a pravděpodobnosti v závislosti na režimu (Atomový vs LCAO)
 function getActiveWaveFunction(x, y, z) {
     if (currentMode === 'atomic') {
-        return waveFunction(currentN, currentL, currentM, x, y, z);
+        return waveFunction(currentN, currentL, currentM, x, y, z, currentZ);
     } else {
         const c_A = 1.0;
         const c_B = molCombination === 'bonding' ? 1.0 : -1.0;
         return molecularWaveFunction(
             molN_A, molL_A, molM_A,
             molN_B, molL_B, molM_B,
-            molDistance, c_A, c_B, x, y, z
+            molDistance, c_A, c_B, x, y, z, molZ_A, molZ_B
         );
     }
 }
 
 function getActiveProbabilityDensity(x, y, z) {
     if (currentMode === 'atomic') {
-        return probabilityDensity(currentN, currentL, currentM, x, y, z);
+        return probabilityDensity(currentN, currentL, currentM, x, y, z, currentZ);
     } else {
         const c_A = 1.0;
         const c_B = molCombination === 'bonding' ? 1.0 : -1.0;
         return molecularProbabilityDensity(
             molN_A, molL_A, molM_A,
             molN_B, molL_B, molM_B,
-            molDistance, c_A, c_B, x, y, z
+            molDistance, c_A, c_B, x, y, z, molZ_A, molZ_B
         );
     }
 }
@@ -392,6 +403,12 @@ function setupPhysicsControls() {
         updateOrbitalState(currentN, currentL, m);
     });
     
+    // Změna protonového čísla Z
+    selectZ.addEventListener('change', () => {
+        currentZ = parseInt(selectZ.value);
+        updateOrbitalState(currentN, currentL, currentM);
+    });
+    
     // Přednastavené orbitaly (presety)
     const presetButtons = document.querySelectorAll('.btn-preset');
     presetButtons.forEach(btn => {
@@ -409,6 +426,8 @@ function setupPhysicsControls() {
             repopulateLSelect(n);
             selectL.value = l;
             repopulateMSelect(l, m);
+            selectZ.value = 1;
+            currentZ = 1;
             
             updateOrbitalState(n, l, m);
         });
@@ -431,6 +450,10 @@ function setupPhysicsControls() {
     selectMA.addEventListener('change', () => {
         updateMolecularOrbitalState();
     });
+    selectZA.addEventListener('change', () => {
+        molZ_A = parseInt(selectZA.value);
+        updateMolecularOrbitalState();
+    });
 
     // Nastavení Atomu B
     selectNB.addEventListener('change', () => {
@@ -446,6 +469,10 @@ function setupPhysicsControls() {
         updateMolecularOrbitalState();
     });
     selectMB.addEventListener('change', () => {
+        updateMolecularOrbitalState();
+    });
+    selectZB.addEventListener('change', () => {
+        molZ_B = parseInt(selectZB.value);
         updateMolecularOrbitalState();
     });
 
@@ -612,10 +639,12 @@ function updateMolecularOrbitalState() {
     molN_A = parseInt(selectNA.value);
     molL_A = parseInt(selectLA.value);
     molM_A = parseInt(selectMA.value);
+    molZ_A = parseInt(selectZA.value);
     
     molN_B = parseInt(selectNB.value);
     molL_B = parseInt(selectLB.value);
     molM_B = parseInt(selectMB.value);
+    molZ_B = parseInt(selectZB.value);
     
     const c_A = 1.0;
     const c_B = molCombination === 'bonding' ? 1.0 : -1.0;
@@ -624,7 +653,8 @@ function updateMolecularOrbitalState() {
     const params = getMolecularOrbitalParams(
         molN_A, molL_A, molM_A,
         molN_B, molL_B, molM_B,
-        molDistance, c_A, c_B
+        molDistance, c_A, c_B,
+        molZ_A, molZ_B
     );
     Rmax = params.Rmax;
     Pmax = params.Pmax;
@@ -700,6 +730,11 @@ function applyMolecularPreset(preset) {
             break;
     }
     
+    molZ_A = 1;
+    molZ_B = 1;
+    selectZA.value = 1;
+    selectZB.value = 1;
+    
     selectNA.value = nA;
     repopulateLSelectGeneric(selectLA, nA);
     selectLA.value = lA;
@@ -734,7 +769,10 @@ function getMolecularLatexFormula() {
     const labelB = ORBITAL_NAMES[molL_B]?.[molM_B] || molM_B;
     const sign = molCombination === 'bonding' ? '+' : '-';
     
-    return `$$\\psi_{\\text{MO}} = \\psi_{${molN_A}, \\text{${labelA}}}(\\mathbf{r}_A) ${sign} \\psi_{${molN_B}, \\text{${labelB}}}(\\mathbf{r}_B)$$`;
+    const zAPart = molZ_A === 1 ? '' : `; Z_A = ${molZ_A}`;
+    const zBPart = molZ_B === 1 ? '' : `; Z_B = ${molZ_B}`;
+    
+    return `$$\\psi_{\\text{MO}} = \\psi_{${molN_A}, \\text{${labelA}}}(\\mathbf{r}_A${zAPart}) ${sign} \\psi_{${molN_B}, \\text{${labelB}}}(\\mathbf{r}_B${zBPart})$$`;
 }
 
 /**
@@ -744,9 +782,10 @@ function updateOrbitalState(n, l, m) {
     currentN = n;
     currentL = l;
     currentM = m;
+    currentZ = parseInt(selectZ.value);
     
     // Získání fyzikálních parametrů (krychle a maximum pravděpodobnosti)
-    const params = getOrbitalParams(n, l, m);
+    const params = getOrbitalParams(n, l, m, currentZ);
     Rmax = params.Rmax;
     Pmax = params.Pmax;
     Pmax_radial = params.Pmax_radial;
@@ -975,23 +1014,26 @@ function updateTheoryPanel() {
  */
 function getLatexFormula(n, l, m) {
     let radialLatex = '';
+    const zTerm = currentZ === 1 ? '' : `${currentZ}`;
+    const zSqrt = currentZ === 1 ? '' : `${currentZ}^{3/2}`;
     
     if (n === 1 && l === 0) {
-        radialLatex = '2 e^{-r}';
+        radialLatex = currentZ === 1 ? '2 e^{-r}' : `2 \\cdot ${zSqrt} e^{-${zTerm}r}`;
     } else if (n === 2 && l === 0) {
-        radialLatex = '\\frac{1}{2\\sqrt{2}} (2-r) e^{-r/2}';
+        radialLatex = currentZ === 1 ? '\\frac{1}{2\\sqrt{2}} (2-r) e^{-r/2}' : `\\frac{${zSqrt}}{2\\sqrt{2}} (2-${zTerm}r) e^{-\\frac{${zTerm}r}{2}}`;
     } else if (n === 2 && l === 1) {
-        radialLatex = '\\frac{1}{2\\sqrt{6}} r e^{-r/2}';
+        radialLatex = currentZ === 1 ? '\\frac{1}{2\\sqrt{6}} r e^{-r/2}' : `\\frac{${zSqrt}}{2\\sqrt{6}} (${zTerm}r) e^{-\\frac{${zTerm}r}{2}}`;
     } else if (n === 3 && l === 0) {
-        radialLatex = '\\frac{2}{81\\sqrt{3}} (27 - 18r + 2r^2) e^{-r/3}';
+        radialLatex = currentZ === 1 ? '\\frac{2}{81\\sqrt{3}} (27 - 18r + 2r^2) e^{-r/3}' : `\\frac{2 \\cdot ${zSqrt}}{81\\sqrt{3}} (27 - 18(${zTerm}r) + 2(${zTerm}r)^2) e^{-\\frac{${zTerm}r}{3}}`;
     } else if (n === 3 && l === 1) {
-        radialLatex = '\\frac{4}{27\\sqrt{6}} r (6 - r) e^{-r/3}';
+        radialLatex = currentZ === 1 ? '\\frac{4}{27\\sqrt{6}} r (6 - r) e^{-r/3}' : `\\frac{4 \\cdot ${zSqrt}}{27\\sqrt{6}} (${zTerm}r) (6 - ${zTerm}r) e^{-\\frac{${zTerm}r}{3}}`;
     } else if (n === 3 && l === 2) {
-        radialLatex = '\\frac{4}{81\\sqrt{30}} r^2 e^{-r/3}';
+        radialLatex = currentZ === 1 ? '\\frac{4}{81\\sqrt{30}} r^2 e^{-r/3}' : `\\frac{4 \\cdot ${zSqrt}}{81\\sqrt{30}} (${zTerm}r)^2 e^{-\\frac{${zTerm}r}{3}}`;
     } else {
         const k = n - l - 1;
         const alpha = 2 * l + 1;
-        radialLatex = `N_{${n},${l}} \\cdot e^{-\\frac{r}{${n}}} \\cdot \\left(\\frac{2r}{${n}}\\right)^{${l}} L_{${k}}^{${alpha}}\\left(\\frac{2r}{${n}}\\right)`;
+        const N_pref = currentZ === 1 ? `N_{${n},${l}}` : `${zSqrt} N_{${n},${l}}`;
+        radialLatex = `${N_pref} \\cdot e^{-\\frac{${currentZ}r}{${n}}} \\cdot \\left(\\frac{2 \\cdot ${currentZ}r}{${n}}\\right)^{${l}} L_{${k}}^{${alpha}}\\left(\\frac{2 \\cdot ${currentZ}r}{${n}}\\right)`;
     }
 
     let angularLatex = '';
