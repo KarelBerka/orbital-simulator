@@ -272,8 +272,9 @@ window.addEventListener('DOMContentLoaded', () => {
     updateOrbitalState(1, 0, 0);
     updateLegendColors();
     
-    // Nastavení výchozího jazyka (Čeština)
-    setLanguage('cs');
+    // Nastavení výchozího jazyka z URL (např. index.html#en, index.html/#en, ?lang=en apod.)
+    const initialLang = detectInitialLanguage();
+    setLanguage(initialLang, false);
     
     // Spuštění smyčky pro automatické generování bodů
     startAutoGenLoop();
@@ -369,7 +370,14 @@ function setupThreeControls() {
 
     btnLangToggle.addEventListener('click', () => {
         const nextLang = currentLang === 'cs' ? 'en' : 'cs';
-        setLanguage(nextLang);
+        setLanguage(nextLang, true);
+    });
+
+    window.addEventListener('hashchange', () => {
+        const lang = detectInitialLanguage();
+        if (lang !== currentLang) {
+            setLanguage(lang, false);
+        }
     });
 }
 
@@ -1284,10 +1292,33 @@ function recolorPoints() {
 }
 
 /**
+ * Detekuje preferovaný jazyk z URL (hash #en, #/en, #cs, query ?lang=en, nebo podcesty /en).
+ */
+function detectInitialLanguage() {
+    const hash = window.location.hash.toLowerCase();
+    const search = window.location.search.toLowerCase();
+    const pathname = window.location.pathname.toLowerCase();
+
+    if (hash.includes('en') || search.includes('en') || pathname.endsWith('/en') || pathname.endsWith('/en/')) {
+        return 'en';
+    }
+    if (hash.includes('cs') || hash.includes('cz') || search.includes('cs') || search.includes('cz') || pathname.endsWith('/cs') || pathname.endsWith('/cs/')) {
+        return 'cs';
+    }
+
+    return 'cs';
+}
+
+/**
  * Nastavení aktuálního jazyka rozhraní (CZ nebo EN).
  */
-function setLanguage(lang) {
+function setLanguage(lang, updateUrl = false) {
     currentLang = lang;
+    
+    // Aktualizace URL hashe (např. #en nebo #cs), pokud je požadováno
+    if (updateUrl && window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', '#' + lang);
+    }
     
     // Projít všechny elementy s data-i18n
     document.querySelectorAll('[data-i18n]').forEach(el => {
