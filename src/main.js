@@ -1090,7 +1090,14 @@ function generateContourLines(n, l, m, Rmax, Pmax) {
         exponent = 0.0;
     }
     
-    const scaleFactor = Math.pow(maxN, exponent);
+    let scaleFactor = Math.pow(maxN, exponent);
+    // U s-orbitalů (l=0) roste hustota v jádře s nábojem Z jako Z^3, zatímco vnější obal roste pomaleji (jako Z).
+    // Poměr hustoty vnějšího obalu k počátku tedy klesá jako 1/Z^2. Práh proto kompenzujeme faktorem Z^2.
+    if (maxL === 0) {
+        const effZ = currentMode === 'atomic' ? currentZ : Math.max(molZ_A, molZ_B);
+        scaleFactor *= Math.pow(effZ, 2.0);
+    }
+    
     const C = (isoVal * Pmax) / scaleFactor;
     const thresholdVal = Math.sqrt(C); // vlnová funkce psi se rovná +/- thresholdVal pro hustotu C
     
