@@ -75,16 +75,19 @@ export class OrbitalVisualizer {
         // Nastavení automatické rotace kamery
         this.autoRotate = true;
 
-        // Inicializace jádra/jader atomů (pulzující barevné koule)
+        // Inicializace jádra/jader atomů (pulzující barevné koule s realistickým výchozím poloměrem)
         this.nucleiGroup = new THREE.Group();
         this.scene.add(this.nucleiGroup);
         
-        const nucleusGeom = new THREE.SphereGeometry(0.4, 32, 32);
+        // Výchozí poloměr 0.04 bohr radii je u reálného atomu téměř neviditelný
+        const nucleusGeom = new THREE.SphereGeometry(0.04, 32, 32);
         const nucleusMat = new THREE.MeshStandardMaterial({
             color: 0x10b981,     // Výchozí zářivě zelená barva
             emissive: 0x059669,  // Výchozí neonově zelený svit
             roughness: 0.1,
-            metalness: 0.8
+            metalness: 0.8,
+            transparent: true,
+            opacity: 1.0
         });
         
         this.nucleusMaterial = nucleusMat;
@@ -93,27 +96,10 @@ export class OrbitalVisualizer {
         
         this.nucleiGroup.add(this.nucleusMeshA);
         this.nucleiGroup.add(this.nucleusMeshB);
-
-        // Inicializace sekundárního vlnového haló efektu (šířící se vlna 1x až 100x velikost jádra)
-        this.haloMaterial = new THREE.MeshBasicMaterial({
-            color: 0x10b981,
-            transparent: true,
-            opacity: 0.0,
-            depthWrite: false
-        });
         
-        const haloGeom = new THREE.SphereGeometry(0.4, 16, 16);
-        this.haloMeshA = new THREE.Mesh(haloGeom, this.haloMaterial);
-        this.haloMeshB = new THREE.Mesh(haloGeom, this.haloMaterial);
-        
-        this.nucleiGroup.add(this.haloMeshA);
-        this.nucleiGroup.add(this.haloMeshB);
-        
-        // Výchozí nastavení - v atomovém režimu je pouze jedno jádro a haló v počátku
+        // Výchozí nastavení - v atomovém režimu je pouze jedno jádro v počátku
         this.nucleusMeshA.position.set(0, 0, 0);
         this.nucleusMeshB.visible = false;
-        this.haloMeshA.position.set(0, 0, 0);
-        this.haloMeshB.visible = false;
         
         this.nucleiVisible = true;
         this.updateNucleiColor(); // Nastavíme kontrastní barvu ihned
@@ -380,11 +366,6 @@ export class OrbitalVisualizer {
             this.nucleusMaterial.emissive.set(emissiveStr);
             this.nucleusMaterial.needsUpdate = true;
         }
-        
-        if (this.haloMaterial) {
-            this.haloMaterial.color.set(colorStr);
-            this.haloMaterial.needsUpdate = true;
-        }
     }
 
     /**
@@ -394,15 +375,10 @@ export class OrbitalVisualizer {
         if (mode === 'atomic') {
             this.nucleusMeshA.position.set(0, 0, 0);
             this.nucleusMeshB.visible = false;
-            this.haloMeshA.position.set(0, 0, 0);
-            this.haloMeshB.visible = false;
         } else {
             this.nucleusMeshA.position.set(0, 0, -d / 2);
             this.nucleusMeshB.position.set(0, 0, d / 2);
             this.nucleusMeshB.visible = true;
-            this.haloMeshA.position.set(0, 0, -d / 2);
-            this.haloMeshB.position.set(0, 0, d / 2);
-            this.haloMeshB.visible = true;
         }
     }
 
@@ -442,30 +418,23 @@ export class OrbitalVisualizer {
             this.nucleiGroup.rotation.y = 0;
         }
 
-        // Pulzující a blikající animace jader
+        // Pulzující animace pevného jádra
         if (this.nucleiVisible) {
-            // 1. Základní mírná oscilace jádra (1.0x až 1.3x)
-            const pulse = 1.0 + 0.15 * Math.sin(Date.now() * 0.004);
-            this.nucleusMeshA.scale.set(pulse, pulse, pulse);
-            this.nucleusMeshB.scale.set(pulse, pulse, pulse);
+            // Pulzování v rozsahu 1x až 100x násobku poloměru jádra (od téměř neviditelného poloměru 0.04 do viditelného 4.0)
+            const progress = (Math.sin(Date.now() * 0.003) + 1.0) / 2.0; // Plynulý cyklus 0.0 -> 1.0 -> 0.0
+            const pulseScale = 1.0 + 99.0 * progress; // Rozsah 1x až 100x
+            
+            this.nucleusMeshA.scale.set(pulseScale, pulseScale, pulseScale);
+            this.nucleusMeshB.scale.set(pulseScale, pulseScale, pulseScale);
 
-            // 2. Šíření rázové vlny (blikání) v rozsahu 1x až 100x násobku poloměru jádra
-            const time = Date.now() * 0.0006; // Rychlost šíření vlny
-            const waveProgress = (time % 1.0); // Hodnota jde od 0.0 do 1.0 (opakující se cyklus)
-            
-            const haloScale = 1.0 + 99.0 * waveProgress; // Zvětšení od 1x do 100x
-            // Opacita klesá k nule jak se vlna rozšiřuje, čímž vzniká plynulé blikání a vytracení
-            const haloOpacity = 0.25 * Math.pow(1.0 - waveProgress, 2.0); 
-            
-            this.haloMeshA.scale.set(haloScale, haloScale, haloScale);
-            this.haloMeshB.scale.set(haloScale, haloScale, haloScale);
-            
-            if (this.haloMaterial) {
-                this.haloMaterial.opacity = haloOpacity;
+            // S růstem jádra plynule snižujeme opacitu z 0.95 (pevný střed) na 0.05 (velmi jemná průhledná sféra),
+            // abychom nezakrývali orbital a zároveň zachovali realistické zobrazení.
+            if (this.nucleusMaterial) {
+                this.nucleusMaterial.opacity = 0.95 - 0.90 * progress;
             }
         } else {
-            if (this.haloMaterial) {
-                this.haloMaterial.opacity = 0.0;
+            if (this.nucleusMaterial) {
+                this.nucleusMaterial.opacity = 0.0;
             }
         }
 
