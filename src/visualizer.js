@@ -420,9 +420,9 @@ export class OrbitalVisualizer {
 
         // Pulzující animace pevného jádra
         if (this.nucleiVisible) {
-            // Pulzování v rozsahu 1x až 100x násobku poloměru jádra (od téměř neviditelného poloměru 0.04 do viditelného 4.0)
+            // Pulzování v rozsahu 1x až 25x násobku poloměru jádra (od téměř neviditelného poloměru 0.04 do 1.0 Bohr)
             const progress = (Math.sin(Date.now() * 0.003) + 1.0) / 2.0; // Plynulý cyklus 0.0 -> 1.0 -> 0.0
-            const pulseScale = 1.0 + 99.0 * progress; // Rozsah 1x až 100x
+            const pulseScale = 1.0 + 24.0 * progress; // Rozsah 1x až 25x (maximum 1.0 Bohr)
             
             this.nucleusMeshA.scale.set(pulseScale, pulseScale, pulseScale);
             this.nucleusMeshB.scale.set(pulseScale, pulseScale, pulseScale);
