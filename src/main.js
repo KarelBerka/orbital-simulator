@@ -838,8 +838,8 @@ function updateMolecularOrbitalState() {
     molZ_B = parseInt(selectZB.value);
     
     let maxR = 5.0;
-    let sumP = 0;
-    let sumPRadial = 0;
+    let maxP = 0;
+    let maxPRadial = 0;
     
     if (!activeMOComponents || activeMOComponents.size === 0) {
         activeMOComponents = new Set(['custom']);
@@ -886,13 +886,13 @@ function updateMolecularOrbitalState() {
             }
         }
         maxR = Math.max(maxR, p.Rmax);
-        sumP += p.Pmax;
-        sumPRadial += p.Pmax_radial;
+        maxP = Math.max(maxP, p.Pmax);
+        maxPRadial = Math.max(maxPRadial, p.Pmax_radial);
     }
     
     Rmax = maxR;
-    Pmax = sumP;
-    Pmax_radial = sumPRadial;
+    Pmax = maxP;
+    Pmax_radial = maxPRadial;
     
     // Generování a vykreslení teoretického tvaru (3D vrstevnice)
     updateBoundaryContours();
@@ -1376,7 +1376,7 @@ function generateContourLines(n, l, m, Rmax, Pmax) {
     } else if (maxL === 1) {
         exponent = 1.5;
     } else {
-        exponent = 0.0;
+        exponent = 1.2;
     }
     
     let scaleFactor = Math.pow(maxN, exponent);
@@ -1385,10 +1385,17 @@ function generateContourLines(n, l, m, Rmax, Pmax) {
     if (maxL === 0) {
         const effZ = currentMode === 'atomic' ? currentZ : Math.max(molZ_A, molZ_B);
         scaleFactor *= Math.pow(effZ, 2.0);
+        if (maxN === 1) scaleFactor *= 1.5;
     }
     
     const C = (isoVal * Pmax) / scaleFactor;
-    const thresholdVal = Math.sqrt(C); // vlnová funkce psi se rovná +/- thresholdVal pro hustotu C
+    let thresholdVal = Math.sqrt(C); // vlnová funkce psi se rovná +/- thresholdVal pro hustotu C
+    
+    // Bezpečnostní strop pro práh (max 85% špičkové vlnové funkce), zaručující vykreslení kontur u všech stavů
+    const maxAllowedThresh = 0.85 * Math.sqrt(Pmax);
+    if (thresholdVal > maxAllowedThresh) {
+        thresholdVal = maxAllowedThresh;
+    }
     
     // Dynamický počet řezů a jemnost mřížky podle maxN a režimu
     const N_slices = currentMode === 'atomic' ? (11 + maxN * 4) : (17 + maxN * 5);
